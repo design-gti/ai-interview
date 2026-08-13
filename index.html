@@ -144,17 +144,8 @@
     </div>
   </div>
 
-  <!-- API Key -->
-  <div class="config-card">
-    <label class="config-label" for="api-key">Kunci API OpenAI</label>
-    <div class="config-row">
-      <input type="password" id="api-key" placeholder="sk-…" autocomplete="off" oninput="checkReady()">
-    </div>
-    <div class="key-hint">
-      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
-      Kunci hanya tersimpan di sesi browser ini dan tidak dikirim ke server kami.
-    </div>
-  </div>
+  <!-- API Key hidden -->
+  <input type="hidden" id="api-key">
 
   <div class="cta-wrap">
     <button class="btn btn-primary btn-lg" id="btn-start" onclick="startSession()">
@@ -186,14 +177,13 @@
   }
 
   function checkReady() {
-    const key = document.getElementById('api-key').value.trim();
     const btn = document.getElementById('btn-start');
-    btn.classList.toggle('active', !!(selectedRole && key.length > 10));
+    btn.classList.toggle('active', !!selectedRole);
   }
 
   function startSession() {
-    const key = document.getElementById('api-key').value.trim();
-    if (!selectedRole || !key) return;
+    if (!selectedRole) return;
+    const key = document.getElementById('api-key').value.trim() || localStorage.getItem('apiKey') || '';
     localStorage.setItem('apiKey', key);
     sessionStorage.setItem('role', selectedRole);
     sessionStorage.setItem('apiKey', key);
