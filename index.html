@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Asesmen Kompetensi Sales — Talentlytica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .page-wrap {
+    min-height: 100vh;
+    background: linear-gradient(160deg, var(--c-primary-1) 0%, var(--c-neutral-1) 50%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: var(--sp-xl) var(--sp-md);
+  }
+
+  .logo-bar { margin-bottom: var(--sp-xl); }
+
+  .page-title {
+    font-size: var(--fs-2xl); font-weight: var(--fw-bold);
+    line-height: var(--lh-tight); text-align: center; margin-bottom: var(--sp-xs);
+  }
+  .page-sub { font-size: var(--fs-sm); color: var(--color-text-dim); text-align: center; margin-bottom: var(--sp-xl); }
+
+  .role-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: var(--sp-md);
+    width: 100%; max-width: 680px; margin-bottom: var(--sp-lg);
+  }
+  .role-card {
+    background: var(--color-surface); border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card); padding: var(--sp-lg);
+    border: 2px solid transparent; cursor: pointer;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .12s ease;
+    text-align: left; display: flex; flex-direction: column; gap: var(--sp-xs);
+  }
+  .role-card:hover { transform: translateY(-2px); box-shadow: 0 6px 28px rgba(0,0,0,.12); }
+  .role-card.selected {
+    border-color: var(--c-primary-5);
+    box-shadow: 0 0 0 4px rgba(1,102,153,.15), var(--shadow-card);
+  }
+  .role-icon {
+    width: 48px; height: 48px; border-radius: var(--r-md);
+    display: flex; align-items: center; justify-content: center;
+    margin-bottom: var(--sp-xs);
+  }
+  .role-icon.hunter { background: var(--c-primary-1); }
+  .role-icon.farmer { background: var(--c-success-0); }
+  .role-name { font-size: var(--fs-lg); font-weight: var(--fw-bold); }
+  .role-meta { font-size: var(--fs-xs); color: var(--color-text-dim); }
+  .role-desc { font-size: var(--fs-sm); color: var(--color-text-dim); line-height: 1.5; margin-top: var(--sp-xs); }
+
+  .kritis-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: var(--sp-xs); }
+  .kpill {
+    font-size: 10px; font-weight: var(--fw-semi); padding: 2px 8px;
+    border-radius: 99px; line-height: 1.6;
+  }
+  .kpill.hunter { background: var(--c-primary-1); color: var(--c-primary-6); }
+  .kpill.farmer { background: var(--c-success-0); color: var(--c-success-6); }
+
+  .config-card {
+    background: var(--color-surface); border-radius: var(--r-lg);
+    box-shadow: var(--shadow-card); padding: var(--sp-lg);
+    width: 100%; max-width: 680px;
+  }
+  .config-label {
+    font-size: var(--fs-sm); font-weight: var(--fw-semi);
+    margin-bottom: var(--sp-xs); display: block;
+  }
+  .config-row { display: flex; gap: var(--sp-sm); align-items: flex-start; }
+  .config-row input {
+    flex: 1; padding: 10px var(--sp-sm); border-radius: var(--r-sm);
+    border: 1.5px solid var(--c-neutral-3); font-size: var(--fs-sm);
+    font-family: inherit; background: var(--c-neutral-0); color: var(--color-text);
+    transition: border-color .15s;
+  }
+  .config-row input:focus { outline: none; border-color: var(--c-primary-5); }
+  .key-hint {
+    font-size: var(--fs-xs); color: var(--color-text-dim); margin-top: 6px;
+    display: flex; align-items: center; gap: 4px;
+  }
+
+  .cta-wrap { width: 100%; max-width: 680px; margin-top: var(--sp-md); }
+  #btn-start {
+    width: 100%; padding: 14px;
+    opacity: .45; pointer-events: none; transition: opacity .2s;
+  }
+  #btn-start.active { opacity: 1; pointer-events: auto; }
+
+  @media (max-width: 520px) {
+    .role-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="page-wrap">
+
+  <div class="logo-bar">
+    <img src="talentlytica-logo.png" alt="Talentlytica" style="height:28px;width:auto;">
+  </div>
+
+  <h1 class="page-title">Asesmen Kompetensi Sales</h1>
+  <p class="page-sub">Pilih role Anda, lalu masukkan kunci API untuk memulai sesi.</p>
+
+  <!-- Role selection -->
+  <div class="role-grid">
+    <div class="role-card" id="card-hunter" onclick="selectRole('hunter')">
+      <div class="role-icon hunter">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary-5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/>
+          <line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/>
+          <line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/>
+          <line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/>
+        </svg>
+      </div>
+      <div class="role-name">Sales Hunter</div>
+      <div class="role-meta">9 aspek · ~20 menit · 9 pertanyaan</div>
+      <div class="role-desc">Fokus pada prospeksi, negosiasi, dan penetrasi segmen baru.</div>
+      <div class="kritis-pills">
+        <span class="kpill hunter">Persuasi</span>
+        <span class="kpill hunter">Kegigihan</span>
+        <span class="kpill hunter">Inisiatif</span>
+        <span class="kpill hunter">+6 aspek</span>
+      </div>
+    </div>
+
+    <div class="role-card" id="card-farmer" onclick="selectRole('farmer')">
+      <div class="role-icon farmer">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-success-5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22V12"/><path d="M5 3v4c0 3.31 2.69 6 6 6h.01C14.31 13 17 10.31 17 7V3"/>
+          <path d="M5 7h12"/>
+        </svg>
+      </div>
+      <div class="role-name">Sales Farmer</div>
+      <div class="role-meta">9 aspek · ~20 menit · 9 pertanyaan</div>
+      <div class="role-desc">Fokus pada retensi akun, layanan, dan kemitraan jangka panjang.</div>
+      <div class="kritis-pills">
+        <span class="kpill farmer">Orientasi Melayani</span>
+        <span class="kpill farmer">Keandalan</span>
+        <span class="kpill farmer">Kemitraan</span>
+        <span class="kpill farmer">+6 aspek</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- API Key -->
+  <div class="config-card">
+    <label class="config-label" for="api-key">Kunci API OpenAI</label>
+    <div class="config-row">
+      <input type="password" id="api-key" placeholder="sk-…" autocomplete="off" oninput="checkReady()">
+    </div>
+    <div class="key-hint">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+      Kunci hanya tersimpan di sesi browser ini dan tidak dikirim ke server kami.
+    </div>
+  </div>
+
+  <div class="cta-wrap">
+    <button class="btn btn-primary btn-lg" id="btn-start" onclick="startSession()">
+      Mulai Sesi Asesmen
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+    </button>
+  </div>
+
+  <p style="margin-top:var(--sp-xl);font-size:var(--fs-xs);color:var(--c-neutral-5);text-align:center;max-width:480px;">
+    Framework ini berstatus <strong>v0.1 — belum tervalidasi SME</strong>. Hasil asesmen adalah estimasi awal untuk pengembangan, bukan keputusan personalia.
+  </p>
+</div>
+
+<script>
+  let selectedRole = null;
+
+  function selectRole(role) {
+    selectedRole = role;
+    document.getElementById('card-hunter').classList.toggle('selected', role === 'hunter');
+    document.getElementById('card-farmer').classList.toggle('selected', role === 'farmer');
+    checkReady();
+  }
+
+  function checkReady() {
+    const key = document.getElementById('api-key').value.trim();
+    const btn = document.getElementById('btn-start');
+    btn.classList.toggle('active', !!(selectedRole && key.length > 10));
+  }
+
+  function startSession() {
+    const key = document.getElementById('api-key').value.trim();
+    if (!selectedRole || !key) return;
+    sessionStorage.setItem('role', selectedRole);
+    sessionStorage.setItem('apiKey', key);
+    sessionStorage.removeItem('results');
+    sessionStorage.removeItem('currentQ');
+    sessionStorage.removeItem('transcripts');
+    window.location.href = '01-welcome.html';
+  }
+</script>
+</body>
+</html>

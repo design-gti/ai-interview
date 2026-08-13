@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cek Perangkat — Asesmen Kompetensi | Talentlytica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .page-wrap {
+    min-height: 100vh; background: var(--c-neutral-1);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 80px var(--sp-md) var(--sp-xl);
+  }
+  .content { max-width: 560px; width: 100%; }
+
+  .check-row {
+    display: flex; align-items: center; gap: var(--sp-md);
+    padding: var(--sp-md) 0; border-bottom: 1px solid var(--c-neutral-2);
+  }
+  .check-row:last-child { border-bottom: none; }
+  .check-icon {
+    width: 44px; height: 44px; border-radius: var(--r-md);
+    background: var(--c-neutral-1); border: 1.5px solid var(--c-neutral-2);
+    display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+  }
+  .check-body { flex: 1; }
+  .check-label { font-size: var(--fs-sm); font-weight: var(--fw-semi); margin-bottom: 2px; }
+  .check-sub { font-size: var(--fs-xs); color: var(--color-text-dim); }
+  .check-status { flex-shrink: 0; }
+
+  /* Camera preview */
+  #cam-video {
+    width: 100%; aspect-ratio: 4/3; border-radius: var(--r-md);
+    background: #0a1622; object-fit: cover; transform: scaleX(-1);
+    display: none;
+  }
+  #cam-placeholder {
+    width: 100%; aspect-ratio: 4/3; border-radius: var(--r-md);
+    background: #0a1622; display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: var(--sp-sm); color: rgba(255,255,255,.4);
+    font-size: var(--fs-sm);
+  }
+
+  /* Mic bars */
+  .mic-bars {
+    display: flex; align-items: flex-end; gap: 3px; height: 28px; padding: 4px 0;
+  }
+  .mic-bar {
+    width: 4px; background: var(--c-primary-5); border-radius: 2px;
+    height: 4px; transition: height .08s ease;
+  }
+
+  /* Speaker test button */
+  .btn-test {
+    font-size: var(--fs-xs); padding: 4px 10px; border-radius: var(--r-xl);
+    border: 1.5px solid var(--c-primary-3); color: var(--c-primary-5);
+    background: transparent; cursor: pointer; font-family: inherit;
+    transition: background .15s;
+  }
+  .btn-test:hover { background: var(--c-primary-0); }
+
+  @keyframes pulse-ring {
+    0% { transform: scale(1); opacity: .5; }
+    100% { transform: scale(1.5); opacity: 0; }
+  }
+</style>
+</head>
+<body>
+<header class="app-header" style="position:fixed;top:0;left:0;right:0;z-index:100;">
+  <img src="talentlytica-logo.png" alt="Talentlytica" style="height:28px;width:auto;">
+  <div class="step-indicator">
+    <div class="step done">1</div>
+    <div class="step-line"></div>
+    <div class="step active">2</div>
+    <div class="step-line"></div>
+    <div class="step">3</div>
+    <div class="step-line"></div>
+    <div class="step">4</div>
+  </div>
+</header>
+
+<div class="page-wrap">
+<div class="content">
+
+  <span class="tag tag-info" style="margin-bottom:var(--sp-sm);display:inline-flex;">Cek Perangkat</span>
+  <h1 style="font-size:var(--fs-2xl);font-weight:var(--fw-bold);line-height:var(--lh-tight);margin-bottom:var(--sp-xs);">Pastikan perangkat siap</h1>
+  <p style="font-size:var(--fs-sm);color:var(--color-text-dim);margin-bottom:var(--sp-lg);">Asesmen membutuhkan mikrofon dan kamera yang berfungsi baik.</p>
+
+  <!-- Camera preview -->
+  <div class="card" style="margin-bottom:var(--sp-md);padding:var(--sp-md);">
+    <div style="font-size:var(--fs-sm);font-weight:var(--fw-semi);margin-bottom:var(--sp-sm);">Pratinjau Kamera</div>
+    <div id="cam-placeholder">
+      <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      Kamera belum aktif
+    </div>
+    <video id="cam-video" autoplay muted playsinline></video>
+  </div>
+
+  <!-- Checks -->
+  <div class="card" style="margin-bottom:var(--sp-md);">
+    <!-- Mic -->
+    <div class="check-row">
+      <div class="check-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary-5)" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+      </div>
+      <div class="check-body">
+        <div class="check-label">Mikrofon</div>
+        <div class="check-sub" id="mic-sub">Menunggu izin…</div>
+        <div class="mic-bars" id="mic-bars" style="display:none;">
+          <div class="mic-bar" id="b0"></div><div class="mic-bar" id="b1"></div>
+          <div class="mic-bar" id="b2"></div><div class="mic-bar" id="b3"></div>
+          <div class="mic-bar" id="b4"></div><div class="mic-bar" id="b5"></div>
+          <div class="mic-bar" id="b6"></div><div class="mic-bar" id="b7"></div>
+        </div>
+        <!-- SpeechRecognition availability note -->
+        <div id="sr-warning" style="display:none;margin-top:4px;" class="tag tag-warning" style="font-size:10px;">
+          Browser tidak mendukung transkripsi otomatis — jawaban harus diketik
+        </div>
+      </div>
+      <div class="check-status"><span class="tag" id="mic-tag">Memeriksa</span></div>
+    </div>
+
+    <!-- Camera -->
+    <div class="check-row">
+      <div class="check-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary-5)" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+      </div>
+      <div class="check-body">
+        <div class="check-label">Kamera</div>
+        <div class="check-sub" id="cam-sub">Menunggu izin…</div>
+      </div>
+      <div class="check-status"><span class="tag" id="cam-tag">Memeriksa</span></div>
+    </div>
+
+    <!-- Speaker -->
+    <div class="check-row">
+      <div class="check-icon">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary-5)" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+      </div>
+      <div class="check-body">
+        <div class="check-label">Speaker</div>
+        <div class="check-sub">AI akan membacakan pertanyaan melalui speaker.</div>
+      </div>
+      <div class="check-status">
+        <button class="btn-test" onclick="testSpeaker()">Test Suara</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="warning-area" style="display:none;margin-bottom:var(--sp-md);"></div>
+
+  <a href="03-interview.html" class="btn btn-primary btn-lg" id="btn-start"
+     style="width:100%;opacity:.45;pointer-events:none;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:var(--sp-xs);">
+    Mulai Interview
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+  </a>
+
+  <p style="font-size:var(--fs-xs);color:var(--color-text-dim);text-align:center;margin-top:var(--sp-md);">
+    Kamera dan mikrofon hanya aktif selama sesi berlangsung.
+  </p>
+
+</div>
+</div>
+
+<script>
+  if (!sessionStorage.getItem('apiKey')) window.location.href = 'index.html';
+
+  let mediaStream = null, micAnalyser = null, micAnimFrame = null;
+  let micOk = false, camOk = false;
+
+  async function initDevices() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      mediaStream = stream;
+
+      // Camera
+      const vid = document.getElementById('cam-video');
+      vid.srcObject = stream;
+      vid.style.display = 'block';
+      document.getElementById('cam-placeholder').style.display = 'none';
+      setStatus('cam', 'success', 'Kamera aktif');
+      camOk = true;
+
+      // Mic
+      const actx = new (window.AudioContext || window.webkitAudioContext)();
+      const src  = actx.createMediaStreamSource(stream);
+      micAnalyser = actx.createAnalyser();
+      micAnalyser.fftSize = 64;
+      src.connect(micAnalyser);
+      setStatus('mic', 'success', 'Mikrofon aktif — coba bicara');
+      document.getElementById('mic-bars').style.display = 'flex';
+      micOk = true;
+      startMicAnim();
+      checkReady();
+
+    } catch (e) {
+      const denied = e.name === 'NotAllowedError';
+      setStatus('mic', 'error', denied ? 'Izin ditolak — aktifkan di pengaturan browser' : 'Tidak dapat mengakses mikrofon');
+      setStatus('cam', 'error', denied ? 'Izin ditolak' : 'Tidak dapat mengakses kamera');
+      document.getElementById('warning-area').style.display = 'block';
+      document.getElementById('warning-area').innerHTML = `
+        <div class="alert alert-warning">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Akses kamera/mikrofon ditolak. Izinkan di browser lalu <a href="" style="color:inherit;font-weight:600;">muat ulang halaman</a>.</span>
+        </div>`;
+    }
+
+    // SpeechRecognition check
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      document.getElementById('sr-warning').style.display = 'inline-flex';
+    }
+  }
+
+  function setStatus(device, state, text) {
+    const tag = document.getElementById(`${device}-tag`);
+    const sub = document.getElementById(`${device}-sub`);
+    tag.className = `tag tag-${state === 'success' ? 'success' : 'error'}`;
+    tag.textContent = state === 'success' ? 'OK' : 'Gagal';
+    if (sub) sub.textContent = text;
+  }
+
+  function startMicAnim() {
+    const data = new Uint8Array(micAnalyser.frequencyBinCount);
+    const bars = [0,1,2,3,4,5,6,7].map(i => document.getElementById(`b${i}`));
+    function tick() {
+      micAnalyser.getByteFrequencyData(data);
+      bars.forEach((b, i) => {
+        const v = data[i * 2] / 255;
+        b.style.height = `${4 + v * 24}px`;
+      });
+      micAnimFrame = requestAnimationFrame(tick);
+    }
+    tick();
+  }
+
+  function checkReady() {
+    const btn = document.getElementById('btn-start');
+    if (micOk) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+  }
+
+  function testSpeaker() {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      [[329.63, 0],[392, .2],[493.88, .4],[659.25, .6]].forEach(([f, t]) => {
+        const o = ctx.createOscillator(), g = ctx.createGain();
+        o.connect(g); g.connect(ctx.destination);
+        o.type = 'sine'; o.frequency.value = f;
+        const st = ctx.currentTime + t;
+        g.gain.setValueAtTime(0, st);
+        g.gain.linearRampToValueAtTime(.09, st + .02);
+        g.gain.exponentialRampToValueAtTime(.001, st + .45);
+        o.start(st); o.stop(st + .5);
+      });
+    } catch(e) {}
+  }
+
+  window.addEventListener('beforeunload', () => {
+    if (mediaStream) mediaStream.getTracks().forEach(t => t.stop());
+    cancelAnimationFrame(micAnimFrame);
+  });
+
+  initDevices();
+</script>
+</body>
+</html>

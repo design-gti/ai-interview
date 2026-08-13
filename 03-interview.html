@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview — Asesmen Kompetensi | Talentlytica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; overflow: hidden; }
+body { display: flex; flex-direction: column; background: #070f1a; color: #fff; font-family: inherit; }
+
+#header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px var(--sp-md); background: rgba(0,0,0,.35);
+  backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,.06);
+  flex-shrink: 0; z-index: 20;
+}
+.rec-badge {
+  display: flex; align-items: center; gap: 6px;
+  font-size: var(--fs-xs); font-weight: var(--fw-bold);
+  color: var(--c-error-4); letter-spacing: .04em;
+}
+.rec-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--c-error-5); }
+@keyframes blink { 0%,100% { opacity:1; } 50% { opacity:.15; } }
+.rec-badge.active .rec-dot { animation: blink .7s infinite; }
+.progress-label { font-size: var(--fs-xs); color: rgba(255,255,255,.55); }
+.timer-chip {
+  font-size: var(--fs-sm); font-weight: var(--fw-semi); letter-spacing: .02em;
+  color: rgba(255,255,255,.7);
+}
+.timer-chip.crit { color: var(--c-error-4); animation: blink .55s infinite; }
+
+/* Progress bar */
+#progress-bar-wrap { height: 3px; background: rgba(255,255,255,.08); flex-shrink: 0; }
+#progress-bar { height: 100%; background: var(--c-primary-5); transition: width .4s ease; width: 0%; }
+
+/* ── Main panels ──────────────────────────────────────────────────────────── */
+#main { flex: 1; display: flex; overflow: hidden; }
+#ai-panel {
+  flex: 1.4; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: var(--sp-xl); gap: var(--sp-lg);
+  position: relative; overflow-y: auto;
+  transition: opacity .7s ease, filter .7s ease;
+}
+#ai-panel.dimmed { opacity: .38; filter: brightness(.55) saturate(.5); }
+#candidate-panel {
+  width: 340px; flex-shrink: 0; display: flex; flex-direction: column;
+  border-left: 1px solid rgba(255,255,255,.07);
+  background: rgba(255,255,255,.025);
+}
+
+/* ── AI Avatar ──────────────────────────────────────────────────────────── */
+.ai-avatar-wrap { position: relative; display: flex; flex-direction: column; align-items: center; gap: var(--sp-sm); }
+.ai-avatar {
+  width: 88px; height: 88px; border-radius: 50%;
+  background: linear-gradient(185.52deg, var(--c-primary-4) 0%, var(--c-primary-6) 100%);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 0 8px rgba(1,102,153,.15);
+}
+@keyframes wave-speak { 0%,100%{transform:scale(1);} 50%{transform:scale(1.06);} }
+@keyframes wave-idle  { 0%,100%{transform:scale(1);} 50%{transform:scale(1.01);} }
+#ai-avatar { animation: wave-idle 3s ease-in-out infinite; }
+#ai-avatar.speaking { animation: wave-speak 1.2s ease-in-out infinite; }
+.wave-dots { display: flex; gap: 5px; margin-top: 4px; }
+.wave-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.3); }
+@keyframes bounce-dot { 0%,80%,100%{transform:translateY(0);background:rgba(255,255,255,.25);} 40%{transform:translateY(-7px);background:rgba(255,255,255,.8);} }
+#ai-avatar.speaking ~ .wave-dots .wave-dot:nth-child(1) { animation: bounce-dot 1.2s .0s infinite; }
+#ai-avatar.speaking ~ .wave-dots .wave-dot:nth-child(2) { animation: bounce-dot 1.2s .2s infinite; }
+#ai-avatar.speaking ~ .wave-dots .wave-dot:nth-child(3) { animation: bounce-dot 1.2s .4s infinite; }
+
+/* ── Question card ────────────────────────────────────────────────────────── */
+#question-card {
+  background: rgba(255,255,255,.06); border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.1); padding: var(--sp-lg);
+  max-width: 600px; width: 100%;
+}
+.q-label { font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--c-primary-4); letter-spacing: .06em; margin-bottom: var(--sp-sm); display: flex; align-items: center; gap: 6px; }
+.q-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--c-primary-5); }
+#q-text { font-size: 1.18rem; line-height: 1.65; font-weight: var(--fw-semi); }
+.word { display: inline; color: rgba(255,255,255,.28); transition: color .1s, text-shadow .1s; }
+.word.word-past { color: rgba(255,255,255,.52); }
+.word.word-active { color: #fff; text-shadow: 0 0 14px rgba(47,149,222,.8); }
+
+/* ── Transcript area ──────────────────────────────────────────────────────── */
+#transcript-wrap {
+  max-width: 600px; width: 100%; background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08); border-radius: 12px;
+  padding: var(--sp-md); min-height: 72px; display: none;
+}
+#transcript-label { font-size: var(--fs-xs); color: rgba(255,255,255,.4); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+#transcript-text { font-size: var(--fs-sm); color: rgba(255,255,255,.7); line-height: 1.6; min-height: 40px; }
+#transcript-text[contenteditable="true"] {
+  outline: none; border-bottom: 1px solid rgba(255,255,255,.15);
+  padding-bottom: 4px; color: rgba(255,255,255,.9);
+}
+#transcript-interim { font-size: var(--fs-sm); color: rgba(255,255,255,.3); font-style: italic; }
+#transcript-manual-note { font-size: var(--fs-xs); color: rgba(253,159,40,.7); margin-top: 6px; display: none; }
+
+/* ── Evaluating overlay inside ai-panel ─────────────────────────────────── */
+#evaluating-overlay {
+  position: absolute; inset: 0; background: rgba(7,15,26,.88);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-md); z-index: 10; border-radius: inherit;
+}
+#evaluating-overlay.visible { display: flex; }
+.eval-spinner {
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 3px solid rgba(1,102,153,.25);
+  border-top-color: var(--c-primary-5);
+  animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.eval-text { font-size: var(--fs-sm); color: rgba(255,255,255,.7); text-align: center; line-height: 1.5; }
+
+/* ── Candidate panel ──────────────────────────────────────────────────────── */
+#self-view-wrap { flex: 1; display: flex; align-items: center; justify-content: center; padding: var(--sp-md); }
+#self-video {
+  width: 100%; aspect-ratio: 4/3; border-radius: 12px;
+  background: #0a1622; object-fit: cover; transform: scaleX(-1);
+  display: none;
+}
+#self-placeholder {
+  width: 100%; aspect-ratio: 4/3; border-radius: 12px;
+  background: #0a1622; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: var(--sp-sm);
+  color: rgba(255,255,255,.25); font-size: var(--fs-xs);
+}
+@keyframes sv-pulse {
+  0%,100% { box-shadow: inset 0 0 0 0 rgba(222,53,11,0), inset 3px 0 0 rgba(222,53,11,.5); }
+  50%     { box-shadow: inset 0 0 40px rgba(222,53,11,.15), inset 3px 0 0 rgba(222,53,11,.8); }
+}
+#self-video.answering { animation: sv-pulse 2.2s ease-in-out infinite; }
+.candidate-name { font-size: var(--fs-xs); font-weight: var(--fw-semi); color: rgba(255,255,255,.6); }
+
+/* ── Control bar ──────────────────────────────────────────────────────────── */
+#control-bar {
+  padding: var(--sp-md); border-top: 1px solid rgba(255,255,255,.07);
+  background: rgba(0,0,0,.2);
+}
+.status-pill {
+  font-size: var(--fs-xs); font-weight: var(--fw-semi); letter-spacing: .04em;
+  display: flex; align-items: center; gap: 6px; justify-content: center;
+  margin-bottom: var(--sp-sm); color: rgba(255,255,255,.5);
+}
+.status-pill .sdot { width: 7px; height: 7px; border-radius: 50%; background: var(--c-primary-5); }
+.status-pill .sdot.red { background: var(--c-error-5); animation: blink .7s infinite; }
+#timer-label { font-size: var(--fs-xs); color: rgba(255,255,255,.4); margin-bottom: var(--sp-xs); text-align: right; }
+.mic-bars-small { display: flex; align-items: flex-end; gap: 2px; height: 20px; }
+.mb { width: 3px; background: var(--c-success-4); border-radius: 2px; height: 3px; transition: height .08s ease; }
+
+/* ── Countdown overlay ───────────────────────────────────────────────────── */
+#countdown-overlay {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(0,10,22,.8); backdrop-filter: blur(10px);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-md);
+}
+#countdown-overlay.visible { display: flex; }
+.cdown-label { font-size: var(--fs-sm); color: rgba(255,255,255,.55); letter-spacing: .08em; font-weight: var(--fw-semi); }
+@keyframes cdown-pop { 0% { transform: scale(.5); opacity: 0; } 40% { transform: scale(1.12); opacity: 1; } 70% { transform: scale(.95); } 100% { transform: scale(1); opacity: 1; } }
+.cdown-num { font-size: 96px; font-weight: 800; line-height: 1; color: #fff; animation: cdown-pop .6s cubic-bezier(.2,.9,.3,1.1) both; }
+.cdown-go  { font-size: 60px; font-weight: 800; color: var(--c-error-4); animation: cdown-pop .6s cubic-bezier(.2,.9,.3,1.1) both; }
+
+/* ── Candidate panel spotlight ───────────────────────────────────────────── */
+#candidate-panel.spot { box-shadow: inset 3px 0 0 rgba(222,53,11,.55), inset 0 0 60px rgba(222,53,11,.06); }
+
+/* ── Start overlay ────────────────────────────────────────────────────────── */
+#start-overlay {
+  position: fixed; inset: 0; z-index: 200; background: rgba(0,10,22,.92);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-md);
+}
+.start-card {
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 20px; padding: var(--sp-xl) var(--sp-lg);
+  max-width: 420px; width: 90%; text-align: center; display: flex;
+  flex-direction: column; align-items: center; gap: var(--sp-md);
+}
+.start-role-badge { font-size: var(--fs-xs); font-weight: var(--fw-bold); letter-spacing: .08em; padding: 4px 14px; border-radius: 99px; }
+
+/* ── Responsive ───────────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  #main { flex-direction: column; }
+  #candidate-panel { width: 100%; height: 160px; flex-shrink: 0; border-left: none; border-top: 1px solid rgba(255,255,255,.07); }
+  #self-view-wrap { padding: var(--sp-sm); }
+  #self-video, #self-placeholder { aspect-ratio: 16/9; }
+  #ai-panel { padding: var(--sp-md); }
+  #q-text { font-size: 1rem; }
+}
+
+/* ── Error toast ─────────────────────────────────────────────────────────── */
+#error-toast {
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-120%);
+  background: #6b1010; border: 1px solid #a33; border-radius: 10px;
+  padding: 10px 18px; display: flex; align-items: center; gap: 10px;
+  font-size: var(--fs-sm); color: #fcc; z-index: 100;
+  transition: transform .3s ease; max-width: 500px; text-align: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,.5);
+}
+#error-toast.visible { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<script src="competency-data.js"></script>
+<div id="error-toast">⚠ Evaluasi gagal: <span id="error-toast-msg"></span></div>
+
+<!-- Header -->
+<div id="header">
+  <div class="rec-badge" id="rec-badge">
+    <span class="rec-dot"></span><span id="rec-text"> SIAP</span>
+  </div>
+  <span class="progress-label" id="progress-label">Pertanyaan — dari 9</span>
+  <span class="timer-chip" id="timer-chip">02:00</span>
+</div>
+<div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+
+<!-- Main -->
+<div id="main">
+
+  <!-- AI Panel -->
+  <div id="ai-panel">
+    <div class="ai-avatar-wrap">
+      <div class="ai-avatar"><div id="ai-avatar">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div></div>
+      <div class="wave-dots"><div class="wave-dot"></div><div class="wave-dot"></div><div class="wave-dot"></div></div>
+      <span style="font-size:var(--fs-xs);color:rgba(255,255,255,.4);">AI Interviewer</span>
+    </div>
+
+    <div id="question-card">
+      <div class="q-label"><span class="q-dot"></span><span id="q-num-label">PERTANYAAN 1 DARI 9</span></div>
+      <div id="q-text"></div>
+    </div>
+
+    <div id="transcript-wrap">
+      <div id="transcript-label">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/></svg>
+        Transkrip jawaban Anda (real-time)
+      </div>
+      <div id="transcript-text" spellcheck="false"></div>
+      <div id="transcript-interim"></div>
+      <div id="transcript-manual-note">⚠ Mode manual — ketik jawaban Anda di atas</div>
+    </div>
+
+    <!-- Evaluating state -->
+    <div id="evaluating-overlay">
+      <div class="eval-spinner"></div>
+      <div class="eval-text">AI sedang menganalisis jawaban…<br><span style="font-size:var(--fs-xs);color:rgba(255,255,255,.4);">Biasanya kurang dari 10 detik</span></div>
+    </div>
+  </div>
+
+  <!-- Candidate Panel -->
+  <div id="candidate-panel">
+    <div id="self-view-wrap">
+      <video id="self-video" autoplay muted playsinline></video>
+      <div id="self-placeholder">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        Kamera tidak aktif
+      </div>
+    </div>
+
+    <div id="control-bar">
+      <div class="status-pill" id="status-pill">
+        <span class="sdot" id="sdot"></span>
+        <span id="status-text">Memuat…</span>
+      </div>
+      <div id="timer-label">Sisa: <span id="sisa-timer">02:00</span></div>
+      <div style="display:flex;align-items:center;gap:var(--sp-xs);margin-bottom:var(--sp-sm);">
+        <div class="mic-bars-small" id="mic-bars-sm">
+          <div class="mb" id="sm0"></div><div class="mb" id="sm1"></div>
+          <div class="mb" id="sm2"></div><div class="mb" id="sm3"></div>
+          <div class="mb" id="sm4"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-done"
+        style="width:100%;display:flex;align-items:center;justify-content:center;gap:6px;opacity:.4;pointer-events:none;"
+        onclick="onDone()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+        <span id="btn-done-text">Selesai Menjawab</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Countdown overlay -->
+<div id="countdown-overlay"></div>
+
+<!-- Start overlay -->
+<div id="start-overlay">
+  <div class="start-card">
+    <div class="ai-avatar" style="width:72px;height:72px;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,.9)" stroke-width="1.8"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    </div>
+    <div>
+      <div class="start-role-badge" id="start-role-badge" style="background:rgba(1,102,153,.2);color:var(--c-primary-4);margin-bottom:var(--sp-xs);display:inline-block;">Sales Hunter</div>
+      <h2 style="font-size:var(--fs-xl);font-weight:var(--fw-bold);line-height:1.3;margin-bottom:var(--sp-xs);">AI Interviewer siap bertanya</h2>
+      <p style="font-size:var(--fs-sm);color:rgba(255,255,255,.55);line-height:1.5;">Sebelum interview sesungguhnya, Anda akan menjawab <strong style="color:rgba(255,255,255,.8);">1 pertanyaan latihan</strong> untuk membiasakan diri dengan sistem. Jawaban latihan tidak dievaluasi.</p>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;font-size:var(--fs-xs);color:rgba(255,255,255,.4);background:rgba(255,255,255,.05);padding:8px 14px;border-radius:99px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      Latihan (1 soal) → Interview (9 soal)
+    </div>
+    <button class="btn btn-primary btn-lg" style="width:100%;" onclick="startSession()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Mulai Sesi Latihan
+    </button>
+  </div>
+</div>
+
+<!-- Simulation done overlay -->
+<div id="sim-done-overlay" style="position:fixed;inset:0;z-index:200;background:rgba(0,10,22,.92);display:none;flex-direction:column;align-items:center;justify-content:center;gap:var(--sp-md);">
+  <div class="start-card">
+    <div style="width:72px;height:72px;border-radius:50%;background:rgba(18,183,106,.15);border:2px solid rgba(18,183,106,.4);display:flex;align-items:center;justify-content:center;">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="rgba(18,183,106,.9)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div>
+      <h2 style="font-size:var(--fs-xl);font-weight:var(--fw-bold);line-height:1.3;margin-bottom:var(--sp-xs);">Sesi Latihan Selesai</h2>
+      <p style="font-size:var(--fs-sm);color:rgba(255,255,255,.55);line-height:1.5;">Bagus! Anda sudah memahami cara kerjanya. Sekarang saatnya memulai <strong style="color:rgba(255,255,255,.8);">interview sesungguhnya</strong> — 9 pertanyaan yang jawabannya akan dievaluasi.</p>
+    </div>
+    <button class="btn btn-primary btn-lg" style="width:100%;" onclick="startRealInterview()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      Mulai Interview Sesungguhnya
+    </button>
+  </div>
+</div>
+
+<script>
+/* ── Guards ────────────────────────────────────────────────────────────────── */
+const role     = sessionStorage.getItem('role');
+const apiKey   = sessionStorage.getItem('apiKey');
+if (!role || !apiKey) { window.location.href = 'index.html'; }
+
+const roleData   = FRAMEWORK.roles[role];
+const questions  = FRAMEWORK.questions[role];
+const TOTAL_Q    = questions.length;
+
+/* ── Simulation ────────────────────────────────────────────────────────────── */
+const SIMULATION_Q = {
+  text: 'Ceritakan secara singkat tentang pekerjaan Anda saat ini — posisi, tim, dan satu hal yang paling Anda nikmati dari pekerjaan tersebut.',
+  aspect: '_simulation'
+};
+let simulationMode = true;
+
+/* ── State ─────────────────────────────────────────────────────────────────── */
+let currentQ   = parseInt(sessionStorage.getItem('currentQ') || '0', 10);
+let state      = 'ready';
+let mediaStream = null, micAnalyser = null, micAnimFrame = null;
+let recognition = null, useManual = false, recognitionStopping = false;
+let finalTranscript = '', interimTranscript = '';
+let timerSecs  = 120, timerInterval = null;
+
+/* ── Init UI ─────────────────────────────────────────────────────────────── */
+document.getElementById('start-role-badge').textContent = roleData.label;
+
+// Resume state: if already started (currentQ > 0 and results exist), skip to current question
+const savedResults = JSON.parse(sessionStorage.getItem('results') || '[]');
+if (savedResults.length > 0 && currentQ > 0) {
+  if (currentQ >= TOTAL_Q) {
+    window.location.href = '04-results.html';
+  } else {
+    document.getElementById('start-overlay').style.display = 'none';
+    requestMedia().then(() => loadQuestion(currentQ));
+  }
+}
+
+/* ── Media ────────────────────────────────────────────────────────────────── */
+async function requestMedia() {
+  try {
+    mediaStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    const vid = document.getElementById('self-video');
+    vid.srcObject = mediaStream;
+    vid.style.display = 'block';
+    document.getElementById('self-placeholder').style.display = 'none';
+    // Mic analyser for bars
+    const actx = new (window.AudioContext || window.webkitAudioContext)();
+    const src  = actx.createMediaStreamSource(mediaStream);
+    micAnalyser = actx.createAnalyser();
+    micAnalyser.fftSize = 32;
+    src.connect(micAnalyser);
+  } catch(e) {}
+}
+
+function startMicBars() {
+  const data = new Uint8Array(micAnalyser?.frequencyBinCount || 0);
+  const bars = [0,1,2,3,4].map(i => document.getElementById(`sm${i}`));
+  function tick() {
+    if (micAnalyser) micAnalyser.getByteFrequencyData(data);
+    bars.forEach((b, i) => { b.style.height = micAnalyser ? `${3 + (data[i*2]||0)/255*17}px` : '3px'; });
+    micAnimFrame = requestAnimationFrame(tick);
+  }
+  tick();
+}
+function stopMicBars() {
+  cancelAnimationFrame(micAnimFrame);
+  [0,1,2,3,4].forEach(i => { const b = document.getElementById(`sm${i}`); if(b) b.style.height = '3px'; });
+}
+
+/* ── SpeechRecognition ────────────────────────────────────────────────────── */
+const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (SpeechRec) {
+  recognition = new SpeechRec();
+  recognition.lang = 'id-ID';
+  recognition.continuous = true;
+  recognition.interimResults = true;
+
+  recognition.onresult = e => {
+    let final = '', interim = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript + ' ';
+      else interim += e.results[i][0].transcript;
+    }
+    finalTranscript += final;
+    interimTranscript = interim;
+    document.getElementById('transcript-text').textContent = finalTranscript;
+    document.getElementById('transcript-interim').textContent = interimTranscript;
+  };
+
+  recognition.onend = () => {
+    if (recognitionStopping) { recognitionStopping = false; return; }
+    if (state === 'candidate-answering') {
+      try { recognition.start(); } catch(e) {}
+    }
+  };
+
+  recognition.onerror = e => {
+    if (e.error === 'no-speech') return;
+    enableManualInput();
+  };
+} else {
+  useManual = true;
+}
+
+function enableManualInput() {
+  useManual = true;
+  const el = document.getElementById('transcript-text');
+  el.contentEditable = 'true';
+  el.setAttribute('data-placeholder', 'Ketik jawaban Anda di sini…');
+  el.style.color = 'rgba(255,255,255,.85)';
+  document.getElementById('transcript-interim').textContent = '';
+  document.getElementById('transcript-manual-note').style.display = 'block';
+}
+
+function startRecognition() {
+  recognitionStopping = false;
+  finalTranscript = ''; interimTranscript = '';
+  document.getElementById('transcript-text').textContent = '';
+  document.getElementById('transcript-interim').textContent = '';
+  if (useManual) { enableManualInput(); return; }
+  try { recognition.start(); } catch(e) {}
+}
+
+function stopRecognition() {
+  if (recognition && !useManual) {
+    recognitionStopping = true;
+    try { recognition.stop(); } catch(e) { recognitionStopping = false; }
+  }
+}
+
+function getTranscript() {
+  if (useManual) return document.getElementById('transcript-text').textContent.trim();
+  return (finalTranscript + interimTranscript).trim();
+}
+
+/* ── Question / state machine ─────────────────────────────────────────────── */
+function loadQuestion(idx) {
+  const q = questions[idx];
+  currentQ = idx;
+  sessionStorage.setItem('currentQ', idx);
+  document.getElementById('progress-label').textContent = `Pertanyaan ${idx+1} dari ${TOTAL_Q}`;
+  document.getElementById('q-num-label').textContent    = `PERTANYAAN ${idx+1} DARI ${TOTAL_Q}`;
+  document.getElementById('progress-bar').style.width   = `${(idx / TOTAL_Q) * 100}%`;
+  buildKaraokeHTML(q.text);
+  setState('ai-speaking');
+  speakQuestion(q.text);
+}
+
+function buildKaraokeHTML(text) {
+  const el = document.getElementById('q-text');
+  let charPos = 0, html = '';
+  (text.match(/\S+|\s+/g) || []).forEach(tok => {
+    if (/^\s+$/.test(tok)) { html += tok; }
+    else { html += `<span class="word" data-s="${charPos}">${tok}</span>`; }
+    charPos += tok.length;
+  });
+  el.innerHTML = html;
+}
+
+function highlightWord(charIndex) {
+  document.querySelectorAll('#q-text .word').forEach(w => {
+    const s = +w.dataset.s, e = s + w.textContent.length;
+    if (charIndex >= s && charIndex < e)  w.className = 'word word-active';
+    else if (charIndex >= e)              w.className = 'word word-past';
+    else                                  w.className = 'word';
+  });
+}
+
+function resetKaraoke(allPast) {
+  document.querySelectorAll('#q-text .word').forEach(w => {
+    w.className = allPast ? 'word word-past' : 'word';
+  });
+}
+
+function setState(s) {
+  state = s;
+  const aiPanel  = document.getElementById('ai-panel');
+  const candPanel= document.getElementById('candidate-panel');
+  const selfVid  = document.getElementById('self-video');
+  const recBadge = document.getElementById('rec-badge');
+  const btnDone  = document.getElementById('btn-done');
+  const statusTxt= document.getElementById('status-text');
+  const sdot     = document.getElementById('sdot');
+  const aiAv     = document.getElementById('ai-avatar');
+  const evalOv   = document.getElementById('evaluating-overlay');
+
+  aiPanel.classList.remove('dimmed');
+  candPanel.classList.remove('spot');
+  selfVid.classList.remove('answering');
+  recBadge.classList.remove('active');
+  evalOv.classList.remove('visible');
+
+  if (s === 'ai-speaking') {
+    aiAv.className = 'speaking';
+    statusTxt.textContent = 'AI sedang membacakan pertanyaan…';
+    sdot.className = 'sdot';
+    btnDone.style.opacity = '.4'; btnDone.style.pointerEvents = 'none';
+    stopMicBars();
+  } else if (s === 'candidate-answering') {
+    aiAv.className = '';
+    aiPanel.classList.add('dimmed');
+    candPanel.classList.add('spot');
+    selfVid.classList.add('answering');
+    recBadge.classList.add('active');
+    document.getElementById('rec-text').textContent = simulationMode ? ' LATIHAN' : ' MEREKAM';
+    statusTxt.textContent = simulationMode ? 'Jawab pertanyaan latihan' : 'Giliran Anda menjawab';
+    sdot.className = 'sdot red';
+    btnDone.style.opacity = '1'; btnDone.style.pointerEvents = 'auto';
+    document.getElementById('btn-done-text').textContent = simulationMode ? 'Selesai Latihan' : 'Selesai Menjawab';
+    document.getElementById('transcript-wrap').style.display = 'block';
+    startMicBars();
+    startTimer();
+    startRecognition();
+  } else if (s === 'evaluating') {
+    aiAv.className = '';
+    aiPanel.classList.add('dimmed');
+    evalOv.classList.add('visible');
+    stopMicBars();
+    btnDone.style.opacity = '.4'; btnDone.style.pointerEvents = 'none';
+    statusTxt.textContent = 'AI menganalisis jawaban…';
+    sdot.className = 'sdot';
+  }
+}
+
+/* ── TTS ────────────────────────────────────────────────────────────────── */
+function pickVoice() {
+  const voices = window.speechSynthesis.getVoices();
+  // Prefer cloud/Google voices for Indonesian (sound more natural)
+  const id = voices.filter(v => v.lang.startsWith('id'));
+  return id.find(v => !v.localService) || id[0] || null;
+}
+
+function speakQuestion(text) {
+  if (!window.speechSynthesis) { onSpeakEnd(); return; }
+  window.speechSynthesis.cancel();
+
+  const RATE = 1.1;
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang  = 'id-ID';
+  utter.rate  = RATE;
+  utter.pitch = 1.0;
+  const v = pickVoice();
+  if (v) utter.voice = v;
+
+  const wordEls = [...document.querySelectorAll('#q-text .word')];
+  let boundaryFired = false;
+  let fallback = null;
+
+  function highlightByIndex(i) {
+    wordEls.forEach((w, idx) => {
+      w.className = idx < i ? 'word word-past' : idx === i ? 'word word-active' : 'word';
+    });
+  }
+
+  function clearFallback() { if (fallback) { clearTimeout(fallback); fallback = null; } }
+
+  utter.onboundary = e => {
+    if (e.name !== 'word') return;
+    if (!boundaryFired) { boundaryFired = true; clearFallback(); }
+    highlightWord(e.charIndex);
+  };
+
+  utter.onstart = () => {
+    resetKaraoke(false);
+    // If word-boundary events never fire (local voice / OS limitation),
+    // fall back to a timer that advances one word at a time.
+    fallback = setTimeout(() => {
+      if (boundaryFired) return;
+      const msPerWord = (60 / (130 * RATE)) * 1000;
+      let wi = 0;
+      function tick() {
+        if (wi >= wordEls.length) return;
+        highlightByIndex(wi++);
+        fallback = setTimeout(tick, msPerWord);
+      }
+      tick();
+    }, 600);
+  };
+
+  utter.onend   = () => { clearFallback(); resetKaraoke(true); onSpeakEnd(); };
+  utter.onerror = () => { clearFallback(); onSpeakEnd(); };
+
+  const start = () => { window.speechSynthesis.speak(utter); };
+  if (window.speechSynthesis.getVoices().length) start();
+  else window.speechSynthesis.onvoiceschanged = start;
+}
+
+function onSpeakEnd() {
+  playReadyBeep();
+  showCountdown(() => {
+    setState('candidate-answering');
+  });
+}
+
+/* ── Countdown ──────────────────────────────────────────────────────────── */
+function showCountdown(cb) {
+  const overlay = document.getElementById('countdown-overlay');
+  overlay.innerHTML = '';
+  overlay.classList.add('visible');
+  const label = document.createElement('div');
+  label.className = 'cdown-label';
+  label.textContent = 'GILIRAN ANDA';
+  overlay.appendChild(label);
+  const num = document.createElement('div');
+  overlay.appendChild(num);
+
+  const steps = ['3','2','1','Mulai!'];
+  let i = 0;
+  function tick() {
+    num.className = steps[i] === 'Mulai!' ? 'cdown-go' : 'cdown-num';
+    num.textContent = steps[i];
+    void num.offsetWidth;
+    num.style.animation = 'none'; void num.offsetWidth;
+    num.style.animation = '';
+    i++;
+    if (i < steps.length) { setTimeout(tick, i < steps.length - 1 ? 850 : 650); }
+    else {
+      setTimeout(() => {
+        overlay.style.opacity = '0';
+        overlay.style.transition = 'opacity .4s';
+        setTimeout(() => { overlay.classList.remove('visible'); overlay.style.opacity = ''; overlay.style.transition = ''; cb(); }, 400);
+      }, 500);
+    }
+  }
+  tick();
+}
+
+/* ── Timer ───────────────────────────────────────────────────────────────── */
+function startTimer() {
+  clearInterval(timerInterval);
+  timerSecs = 120;
+  updateTimerUI();
+  timerInterval = setInterval(() => {
+    timerSecs--;
+    updateTimerUI();
+    if (timerSecs <= 0) { clearInterval(timerInterval); onDone(); }
+  }, 1000);
+}
+
+function updateTimerUI() {
+  const m = Math.floor(timerSecs / 60), s = timerSecs % 60;
+  const txt = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  document.getElementById('timer-chip').textContent = txt;
+  document.getElementById('sisa-timer').textContent = txt;
+  const chip = document.getElementById('timer-chip');
+  chip.className = timerSecs <= 10 ? 'timer-chip crit' : timerSecs <= 30 ? 'timer-chip warn' : 'timer-chip';
+}
+
+/* ── Done button ─────────────────────────────────────────────────────────── */
+async function onDone() {
+  if (state !== 'candidate-answering') return;
+  clearInterval(timerInterval);
+  stopRecognition();
+
+  const transcript = getTranscript();
+
+  if (simulationMode) {
+    document.getElementById('transcript-wrap').style.display = 'none';
+    document.getElementById('sim-done-overlay').style.display = 'flex';
+    return;
+  }
+
+  if (transcript.length < 20) {
+    const ok = confirm('Jawaban sangat pendek. Yakin ingin melanjutkan?');
+    if (!ok) { startRecognition(); return; }
+  }
+
+  setState('evaluating');
+  document.getElementById('transcript-wrap').style.display = 'none';
+
+  const q = questions[currentQ];
+  let result = null;
+  try {
+    const ev = await evaluateAnswer(q.aspect, q.text, transcript, role);
+    result = { aspect: q.aspect, question: q.text, transcript, level: ev.level, label: ev.label, rationale: ev.rationale, error: false };
+  } catch (err) {
+    result = { aspect: q.aspect, question: q.text, transcript, level: null, label: null, rationale: null, error: true, errMsg: err.message };
+    const toast = document.getElementById('error-toast');
+    document.getElementById('error-toast-msg').textContent = err.message || 'Tidak diketahui';
+    toast.classList.add('visible');
+    setTimeout(() => toast.classList.remove('visible'), 6000);
+  }
+
+  const results = JSON.parse(sessionStorage.getItem('results') || '[]');
+  results.push(result);
+  sessionStorage.setItem('results', JSON.stringify(results));
+
+  const nextQ = currentQ + 1;
+  if (nextQ >= TOTAL_Q) {
+    sessionStorage.setItem('currentQ', nextQ);
+    window.location.href = '04-results.html';
+    return;
+  }
+
+  loadQuestion(nextQ);
+}
+
+/* ── Audio ──────────────────────────────────────────────────────────────── */
+function playReadyBeep() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    [[523.25, 0], [659.25, .18]].forEach(([f, t]) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type = 'sine'; o.frequency.value = f;
+      const st = ctx.currentTime + t;
+      g.gain.setValueAtTime(0, st);
+      g.gain.linearRampToValueAtTime(.07, st + .02);
+      g.gain.exponentialRampToValueAtTime(.001, st + .35);
+      o.start(st); o.stop(st + .4);
+    });
+  } catch(e) {}
+}
+
+/* ── Simulation ─────────────────────────────────────────────────────────── */
+function loadSimulation() {
+  simulationMode = true;
+  document.getElementById('progress-label').textContent = 'Sesi Latihan';
+  document.getElementById('q-num-label').textContent    = 'PERTANYAAN LATIHAN';
+  document.getElementById('progress-bar').style.width   = '0%';
+  buildKaraokeHTML(SIMULATION_Q.text);
+  setState('ai-speaking');
+  speakQuestion(SIMULATION_Q.text);
+}
+
+function startRealInterview() {
+  simulationMode = false;
+  document.getElementById('sim-done-overlay').style.display = 'none';
+  loadQuestion(currentQ);
+}
+
+/* ── Session start ──────────────────────────────────────────────────────── */
+async function startSession() {
+  document.getElementById('start-overlay').style.display = 'none';
+  await requestMedia();
+  startMicBars();
+  if (useManual) enableManualInput();
+  loadSimulation();
+}
+
+/* ── Cleanup ─────────────────────────────────────────────────────────────── */
+window.addEventListener('beforeunload', () => {
+  mediaStream?.getTracks().forEach(t => t.stop());
+  cancelAnimationFrame(micAnimFrame);
+  window.speechSynthesis?.cancel();
+  stopRecognition();
+});
+
+/* ── Voices preload ──────────────────────────────────────────────────────── */
+window.addEventListener('DOMContentLoaded', () => {
+  if (window.speechSynthesis) window.speechSynthesis.getVoices();
+});
+</script>
+</body>
+</html>

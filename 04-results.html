@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hasil Asesmen — Kompetensi Sales | Talentlytica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  .page-wrap {
+    min-height: 100vh; background: var(--c-neutral-1);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 80px var(--sp-md) var(--sp-xl);
+  }
+  .content { max-width: 760px; width: 100%; }
+
+  /* Summary banner */
+  .summary-banner {
+    border-radius: var(--r-lg); padding: var(--sp-lg);
+    margin-bottom: var(--sp-lg); display: flex; align-items: flex-start; gap: var(--sp-md);
+  }
+  .summary-icon { width: 52px; height: 52px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .summary-num { font-size: var(--fs-2xl); font-weight: var(--fw-bold); line-height: 1; }
+  .summary-sub { font-size: var(--fs-sm); color: var(--color-text-dim); margin-top: 2px; }
+
+  /* Results table */
+  .results-table { width: 100%; border-collapse: collapse; }
+  .results-table th {
+    text-align: left; font-size: var(--fs-xs); font-weight: var(--fw-semi);
+    color: var(--color-text-dim); padding: var(--sp-xs) var(--sp-sm);
+    border-bottom: 2px solid var(--c-neutral-2); letter-spacing: .03em;
+  }
+  .results-table td { padding: var(--sp-sm); border-bottom: 1px solid var(--c-neutral-2); vertical-align: middle; }
+  .results-table tr:last-child td { border-bottom: none; }
+  .results-table tr.expandable { cursor: pointer; }
+  .results-table tr.expandable:hover td { background: var(--c-neutral-1); }
+
+  .aspect-name { font-size: var(--fs-sm); font-weight: var(--fw-semi); }
+  .aspect-code { font-size: var(--fs-xs); color: var(--color-text-dim); }
+  .weight-badge { font-size: 10px; font-weight: var(--fw-bold); padding: 2px 8px; border-radius: 99px; }
+  .w-kritis { background: rgba(222,53,11,.12); color: var(--c-error-5); }
+  .w-tinggi  { background: rgba(255,137,24,.12); color: var(--c-warning-6); }
+
+  .level-cell { font-size: var(--fs-sm); font-weight: var(--fw-semi); white-space: nowrap; }
+  .level-badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 99px; font-size: var(--fs-xs); font-weight: var(--fw-semi);
+  }
+  .lb-good   { background: var(--c-success-0); color: var(--c-success-6); }
+  .lb-warn   { background: rgba(255,137,24,.1); color: var(--c-warning-6); }
+  .lb-danger { background: rgba(222,53,11,.1);  color: var(--c-error-5);  }
+  .lb-null   { background: var(--c-neutral-2);  color: var(--color-text-dim); }
+
+  .status-cell { font-size: var(--fs-xs); font-weight: var(--fw-semi); white-space: nowrap; }
+
+  /* Expandable detail row */
+  .detail-row { display: none; }
+  .detail-row.open { display: table-row; }
+  .detail-row td { background: var(--c-neutral-0); border-bottom: 2px solid var(--c-neutral-2); }
+  .detail-inner { padding: var(--sp-sm) var(--sp-md); }
+  .detail-section { margin-bottom: var(--sp-sm); }
+  .detail-label { font-size: var(--fs-xs); font-weight: var(--fw-semi); color: var(--color-text-dim); margin-bottom: 4px; letter-spacing: .04em; }
+  .detail-text { font-size: var(--fs-sm); line-height: 1.6; color: var(--color-text); }
+  .detail-transcript { font-size: var(--fs-sm); line-height: 1.6; color: var(--color-text-dim); font-style: italic; max-height: 120px; overflow-y: auto; }
+
+  /* Retry button */
+  .btn-retry { font-size: var(--fs-xs); padding: 3px 10px; border-radius: var(--r-xl); border: 1.5px solid var(--c-primary-3); color: var(--c-primary-5); background: transparent; cursor: pointer; font-family: inherit; }
+
+  /* Priority focus area */
+  .focus-list { display: flex; flex-wrap: wrap; gap: var(--sp-xs); margin-top: var(--sp-sm); }
+  .focus-chip { padding: 4px 12px; border-radius: 99px; font-size: var(--fs-xs); font-weight: var(--fw-semi); background: rgba(222,53,11,.08); color: var(--c-error-5); border: 1px solid rgba(222,53,11,.2); }
+
+  /* Print */
+  @media print {
+    header { display: none; }
+    .no-print { display: none !important; }
+    .page-wrap { padding-top: var(--sp-xl); }
+    .detail-row { display: table-row !important; }
+  }
+
+  @keyframes fadeInUp { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:none; } }
+  .anim-in { animation: fadeInUp .35s ease both; }
+</style>
+</head>
+<body>
+<header class="app-header" style="position:fixed;top:0;left:0;right:0;z-index:100;">
+  <img src="talentlytica-logo.png" alt="Talentlytica" style="height:28px;width:auto;">
+  <span class="tag tag-success">
+    <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+    Sesi Selesai
+  </span>
+</header>
+
+<div class="page-wrap">
+<div class="content">
+
+  <div style="margin-bottom:var(--sp-xl);" class="anim-in">
+    <h1 style="font-size:var(--fs-2xl);font-weight:var(--fw-bold);line-height:var(--lh-tight);margin-bottom:4px;">Hasil Asesmen Kompetensi</h1>
+    <p style="font-size:var(--fs-sm);color:var(--color-text-dim);" id="result-subtitle">Memuat…</p>
+  </div>
+
+  <!-- Summary banner -->
+  <div id="summary-banner" class="summary-banner anim-in" style="animation-delay:.05s;background:var(--c-success-0);border:1px solid rgba(0,135,90,.15);">
+    <div class="summary-icon" style="background:var(--c-success-1);">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-success-5)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+    </div>
+    <div>
+      <div class="summary-num" id="summary-num" style="color:var(--c-success-6);">—</div>
+      <div class="summary-sub" id="summary-sub">aspek mencapai target level</div>
+      <div id="focus-area" style="margin-top:var(--sp-sm);display:none;">
+        <div style="font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--color-text-dim);margin-bottom:4px;">Prioritas pengembangan:</div>
+        <div class="focus-list" id="focus-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Error banner if any failed -->
+  <div id="error-banner" style="display:none;margin-bottom:var(--sp-md);" class="alert alert-warning">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    <span id="error-banner-text">Beberapa jawaban gagal dievaluasi. Klik "Evaluasi Ulang" di baris terkait.</span>
+  </div>
+
+  <!-- Results table -->
+  <div class="card" style="padding:0;overflow:hidden;margin-bottom:var(--sp-lg);animation:fadeInUp .35s .1s ease both;">
+    <table class="results-table" id="results-table">
+      <thead>
+        <tr>
+          <th>Aspek</th>
+          <th>Bobot</th>
+          <th>Level Dicapai</th>
+          <th>Target</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody id="results-body"></tbody>
+    </table>
+  </div>
+
+  <!-- Disclaimer -->
+  <div class="alert alert-info" style="margin-bottom:var(--sp-lg);animation:fadeInUp .35s .15s ease both;">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+    <span>Hasil ini adalah <strong>estimasi AI</strong> berdasarkan satu jawaban per aspek dalam kondisi tertentu. Framework kompetensi ini berstatus <strong>v0.1 — belum tervalidasi SME</strong>. Tidak dapat digunakan untuk keputusan seleksi atau promosi. Gunakan sebagai titik awal diskusi coaching.</span>
+  </div>
+
+  <!-- CTA -->
+  <div style="display:flex;gap:var(--sp-sm);flex-wrap:wrap;animation:fadeInUp .35s .2s ease both;" class="no-print">
+    <button class="btn btn-primary" onclick="window.print()" style="flex:1;min-width:200px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Cetak / Simpan PDF
+    </button>
+    <a href="index.html" class="btn btn-outline-neutral" style="flex:1;min-width:200px;text-align:center;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:6px;"
+       onclick="sessionStorage.clear()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.36"/></svg>
+      Sesi Baru
+    </a>
+  </div>
+
+</div>
+</div>
+
+<script src="competency-data.js"></script>
+<script>
+  const role    = sessionStorage.getItem('role') || 'hunter';
+  const roleData= FRAMEWORK.roles[role];
+  const results = JSON.parse(sessionStorage.getItem('results') || '[]');
+
+  if (!results.length) { window.location.href = 'index.html'; }
+
+  document.getElementById('result-subtitle').textContent = `${roleData.label} · ${results.length} pertanyaan dijawab`;
+
+  // Build table
+  const tbody = document.getElementById('results-body');
+  let achieved = 0, belowTarget = [], errorCount = 0;
+
+  results.forEach((r, i) => {
+    const asp    = FRAMEWORK.aspects[r.aspect];
+    const target = roleData.targets[r.aspect];
+    const weight = roleData.weights[r.aspect];
+    const level  = r.level;
+    const gap    = level !== null ? level - target : null;
+
+    if (level !== null && level >= target) achieved++;
+    if (level !== null && level < target)  belowTarget.push(asp.name);
+    if (r.error) errorCount++;
+
+    // Main row
+    const tr = document.createElement('tr');
+    tr.className = 'expandable';
+    tr.onclick = () => toggleDetail(i);
+
+    let statusHTML = '';
+    let lbClass = 'lb-null';
+    if (level === null) {
+      statusHTML = `<span class="status-cell" style="color:var(--color-text-dim);">— Gagal evaluasi</span>`;
+    } else if (gap >= 0) {
+      lbClass = 'lb-good';
+      statusHTML = `<span class="status-cell" style="color:var(--c-success-5);">✓ Tercapai${gap > 0 ? ` (+${gap})` : ''}</span>`;
+    } else if (gap === -1) {
+      lbClass = 'lb-warn';
+      statusHTML = `<span class="status-cell" style="color:var(--c-warning-6);">⬇ −1 dari target</span>`;
+    } else {
+      lbClass = 'lb-danger';
+      statusHTML = `<span class="status-cell" style="color:var(--c-error-5);">⬇⬇ −${Math.abs(gap)} dari target</span>`;
+    }
+
+    const levelText = level !== null ? `L${level} ${FRAMEWORK.levelLabels[level-1]}` : '—';
+    const targetText= `L${target} ${FRAMEWORK.levelLabels[target-1]}`;
+
+    tr.innerHTML = `
+      <td>
+        <div class="aspect-name">${asp.name}</div>
+        <div class="aspect-code">${r.aspect}</div>
+      </td>
+      <td><span class="weight-badge ${weight === 'Kritis' ? 'w-kritis' : 'w-tinggi'}">${weight}</span></td>
+      <td><span class="level-badge ${lbClass}">${levelText}</span></td>
+      <td style="font-size:var(--fs-xs);color:var(--color-text-dim);">${targetText}</td>
+      <td>${statusHTML}</td>`;
+    tbody.appendChild(tr);
+
+    // Detail row
+    const detail = document.createElement('tr');
+    detail.className = 'detail-row';
+    detail.id = `detail-${i}`;
+    const retryBtn = r.error
+      ? `<button class="btn-retry no-print" onclick="retryEval(${i}, event)">Evaluasi Ulang</button>`
+      : '';
+    detail.innerHTML = `<td colspan="5">
+      <div class="detail-inner">
+        ${r.rationale ? `
+        <div class="detail-section">
+          <div class="detail-label">PENILAIAN AI</div>
+          <div class="detail-text">${r.rationale}</div>
+        </div>` : r.error ? `
+        <div class="detail-section">
+          <div class="detail-label">EVALUASI GAGAL</div>
+          <div class="detail-text" style="color:var(--c-error-5);">Error: ${r.errMsg || 'Tidak diketahui'}. ${retryBtn}</div>
+        </div>` : ''}
+        <div class="detail-section">
+          <div class="detail-label">TRANSKRIP JAWABAN</div>
+          <div class="detail-transcript">${r.transcript || '<em style="color:var(--color-text-dim);">Tidak ada transkrip</em>'}</div>
+        </div>
+        <div class="detail-section" style="margin-bottom:0;">
+          <div class="detail-label">PERTANYAAN</div>
+          <div class="detail-text" style="color:var(--color-text-dim);font-style:italic;">${r.question}</div>
+        </div>
+      </div>
+    </td>`;
+    tbody.appendChild(detail);
+  });
+
+  function toggleDetail(i) {
+    const row = document.getElementById(`detail-${i}`);
+    row.classList.toggle('open');
+  }
+
+  // Summary
+  document.getElementById('summary-num').textContent = `${achieved} dari ${results.length}`;
+  if (belowTarget.length) {
+    const fa = document.getElementById('focus-area');
+    fa.style.display = 'block';
+    belowTarget.forEach(name => {
+      const chip = document.createElement('span');
+      chip.className = 'focus-chip'; chip.textContent = name;
+      document.getElementById('focus-list').appendChild(chip);
+    });
+  }
+  if (achieved < results.length / 2) {
+    const b = document.getElementById('summary-banner');
+    b.style.background = 'rgba(222,53,11,.06)';
+    b.style.borderColor = 'rgba(222,53,11,.15)';
+    const icon = b.querySelector('.summary-icon');
+    icon.style.background = 'rgba(222,53,11,.1)';
+    icon.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--c-error-5)" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+    document.getElementById('summary-num').style.color = 'var(--c-error-5)';
+  }
+
+  if (errorCount) {
+    document.getElementById('error-banner').style.display = 'flex';
+    document.getElementById('error-banner-text').textContent =
+      `${errorCount} jawaban gagal dievaluasi. Klik baris terkait lalu tekan "Evaluasi Ulang".`;
+  }
+
+  // Retry evaluation
+  async function retryEval(idx, e) {
+    e.stopPropagation();
+    const btn = e.target;
+    btn.textContent = 'Mengevaluasi…'; btn.disabled = true;
+    const r = results[idx];
+    try {
+      const ev = await evaluateAnswer(r.aspect, r.question, r.transcript, role);
+      results[idx] = { ...r, level: ev.level, label: ev.label, rationale: ev.rationale, error: false };
+      sessionStorage.setItem('results', JSON.stringify(results));
+      location.reload();
+    } catch (err) {
+      btn.textContent = 'Gagal — coba lagi';
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
