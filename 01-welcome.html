@@ -126,23 +126,11 @@
   const role = sessionStorage.getItem('role') || 'hunter';
   const roleData = FRAMEWORK.roles[role];
 
-  // Guard: redirect if no role/key
-  if (!sessionStorage.getItem('apiKey')) window.location.href = 'index.html';
+  // Guard: redirect if no role
+  if (!sessionStorage.getItem('role')) window.location.href = 'index.html';
 
   document.getElementById('role-tag').textContent = roleData.label;
   document.getElementById('welcome-title').textContent = `Selamat datang, ${roleData.label}`;
-
-  // Build aspect grid
-  const grid = document.getElementById('aspect-grid');
-  roleData.aspects.forEach(code => {
-    const asp = FRAMEWORK.aspects[code];
-    const w   = roleData.weights[code];
-    const dotClass = w === 'Kritis' ? 'dot-kritis' : 'dot-tinggi';
-    const item = document.createElement('div');
-    item.className = 'aspect-item';
-    item.innerHTML = `<span class="weight-dot ${dotClass}"></span><span>${asp.name}</span>`;
-    grid.appendChild(item);
-  });
 
   function checkConsent() {
     const checked = document.getElementById('consent-cb').checked;
