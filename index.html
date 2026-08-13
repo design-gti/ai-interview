@@ -171,6 +171,13 @@
 <script>
   let selectedRole = null;
 
+  // Pre-fill API key from localStorage so user doesn't retype each session
+  window.addEventListener('DOMContentLoaded', () => {
+    const saved = localStorage.getItem('apiKey');
+    if (saved) document.getElementById('api-key').value = saved;
+    checkReady();
+  });
+
   function selectRole(role) {
     selectedRole = role;
     document.getElementById('card-hunter').classList.toggle('selected', role === 'hunter');
@@ -187,6 +194,7 @@
   function startSession() {
     const key = document.getElementById('api-key').value.trim();
     if (!selectedRole || !key) return;
+    localStorage.setItem('apiKey', key);
     sessionStorage.setItem('role', selectedRole);
     sessionStorage.setItem('apiKey', key);
     sessionStorage.removeItem('results');
