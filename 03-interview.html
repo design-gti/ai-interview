@@ -335,8 +335,8 @@ body { display: flex; flex-direction: column; background: #070f1a; color: #fff; 
 <script>
 /* ── Guards ────────────────────────────────────────────────────────────────── */
 const role     = sessionStorage.getItem('role');
-const apiKey   = sessionStorage.getItem('apiKey');
-if (!role || !apiKey) { window.location.href = 'index.html'; }
+const apiKey   = sessionStorage.getItem('apiKey') || localStorage.getItem('apiKey') || '';
+if (!role) { window.location.href = 'index.html'; }
 
 const roleData   = FRAMEWORK.roles[role];
 const questions  = FRAMEWORK.questions[role];

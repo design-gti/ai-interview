@@ -111,9 +111,9 @@
     </label>
   </div>
 
-  <a href="02-device-check.html" class="btn btn-primary btn-lg" id="btn-next"
+  <a href="#" class="btn btn-primary btn-lg" id="btn-next"
      style="width:100%;opacity:.45;pointer-events:none;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:var(--sp-xs);"
-     onclick="return !!document.getElementById('consent-cb').checked">
+     onclick="if(!document.getElementById('consent-cb').checked)return false;window.location.href='02-device-check.html?v='+Date.now();return false;">
     Lanjut ke Cek Perangkat
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
   </a>
