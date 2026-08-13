@@ -194,6 +194,18 @@ body { display: flex; flex-direction: column; background: #070f1a; color: #fff; 
   #q-text { font-size: 1rem; }
 }
 
+/* ── Skip audio button ────────────────────────────────────────────────────── */
+#btn-skip-audio {
+  display: none; align-items: center; gap: 6px;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 99px; padding: 6px 14px;
+  font-size: var(--fs-xs); color: rgba(255,255,255,.55);
+  cursor: pointer; font-family: inherit;
+  transition: background .15s, color .15s;
+}
+#btn-skip-audio:hover { background: rgba(255,255,255,.13); color: rgba(255,255,255,.85); }
+#btn-skip-audio.visible { display: flex; }
+
 /* ── Error toast ─────────────────────────────────────────────────────────── */
 #error-toast {
   position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-120%);
@@ -239,6 +251,11 @@ body { display: flex; flex-direction: column; background: #070f1a; color: #fff; 
       <div class="q-label"><span class="q-dot"></span><span id="q-num-label">PERTANYAAN 1 DARI 9</span></div>
       <div id="q-text"></div>
     </div>
+
+    <button id="btn-skip-audio" onclick="stopAudio()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/><line x1="19" y1="3" x2="19" y2="21"/></svg>
+      Lewati audio
+    </button>
 
     <div id="transcript-wrap">
       <div id="transcript-label">
@@ -525,6 +542,7 @@ function setState(s) {
   selfVid.classList.remove('answering');
   recBadge.classList.remove('active');
   evalOv.classList.remove('visible');
+  document.getElementById('btn-skip-audio').classList.remove('visible');
 
   if (s === 'ai-speaking') {
     aiAv.className = 'speaking';
@@ -532,6 +550,7 @@ function setState(s) {
     sdot.className = 'sdot';
     btnDone.style.opacity = '.4'; btnDone.style.pointerEvents = 'none';
     stopMicBars();
+    document.getElementById('btn-skip-audio').classList.add('visible');
   } else if (s === 'candidate-answering') {
     aiAv.className = '';
     aiPanel.classList.add('dimmed');
@@ -619,6 +638,12 @@ function speakQuestion(text) {
   const start = () => { window.speechSynthesis.speak(utter); };
   if (window.speechSynthesis.getVoices().length) start();
   else window.speechSynthesis.onvoiceschanged = start;
+}
+
+function stopAudio() {
+  if (state !== 'ai-speaking') return;
+  window.speechSynthesis.cancel();
+  onSpeakEnd();
 }
 
 function onSpeakEnd() {
