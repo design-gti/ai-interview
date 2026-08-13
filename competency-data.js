@@ -261,7 +261,8 @@ async function evaluateAnswer(aspectCode, questionText, transcript, roleKey) {
   const role     = FRAMEWORK.roles[roleKey];
   const aspect   = FRAMEWORK.aspects[aspectCode];
   const target   = role.targets[aspectCode];
-  const apiKey   = sessionStorage.getItem('apiKey');
+  const isLocal  = ['localhost', '127.0.0.1'].includes(window.location.hostname);
+  const apiKey   = sessionStorage.getItem('apiKey') || localStorage.getItem('apiKey') || '';
 
   const prompt = `Kamu evaluator kompetensi untuk posisi ${role.label}.
 
@@ -289,12 +290,16 @@ Aturan penting:
 Balas HANYA dalam JSON (tanpa markdown fence):
 {"level": <angka 1-5>, "rationale": "<2-3 kalimat bahasa Indonesia yang menyebut bukti spesifik dari jawaban>"}`;
 
-  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+  const endpoint = isLocal
+    ? 'https://api.openai.com/v1/chat/completions'
+    : '/api/evaluate';
+  const headers = isLocal
+    ? { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
+    : { 'Content-Type': 'application/json' };
+
+  const res = await fetch(endpoint, {
     method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json'
-    },
+    headers,
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       max_tokens: 300,
