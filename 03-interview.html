@@ -206,6 +206,32 @@ body { display: flex; flex-direction: column; background: #070f1a; color: #fff; 
 #btn-skip-audio:hover { background: rgba(255,255,255,.13); color: rgba(255,255,255,.85); }
 #btn-skip-audio.visible { display: flex; }
 
+/* ── Reviewing overlay ───────────────────────────────────────────────────── */
+#reviewing-overlay {
+  position: absolute; inset: 0; background: rgba(7,15,26,.93);
+  display: none; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--sp-md); z-index: 10; border-radius: inherit; padding: var(--sp-xl);
+}
+#reviewing-overlay.visible { display: flex; }
+.review-transcript {
+  width: 100%; max-width: 520px; background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.1); border-radius: 12px;
+  padding: var(--sp-md); font-size: var(--fs-sm); color: rgba(255,255,255,.75);
+  line-height: 1.65; max-height: 160px; overflow-y: auto;
+  font-style: italic;
+}
+.review-actions { display: flex; gap: var(--sp-sm); width: 100%; max-width: 520px; }
+.review-actions button { flex: 1; }
+#btn-retry-answer {
+  background: rgba(255,255,255,.08); border: 1.5px solid rgba(255,255,255,.2);
+  color: rgba(255,255,255,.8); border-radius: var(--r-lg); padding: 11px;
+  font-size: var(--fs-sm); font-weight: var(--fw-semi); font-family: inherit;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background .15s;
+}
+#btn-retry-answer:hover { background: rgba(255,255,255,.14); }
+#btn-retry-answer:disabled { opacity: .35; pointer-events: none; }
+
 /* ── Error toast ─────────────────────────────────────────────────────────── */
 #error-toast {
   position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-120%);
@@ -271,6 +297,25 @@ body { display: flex; flex-direction: column; background: #070f1a; color: #fff; 
     <div id="evaluating-overlay">
       <div class="eval-spinner"></div>
       <div class="eval-text">AI sedang menganalisis jawaban…<br><span style="font-size:var(--fs-xs);color:rgba(255,255,255,.4);">Biasanya kurang dari 10 detik</span></div>
+    </div>
+
+    <!-- Reviewing state -->
+    <div id="reviewing-overlay">
+      <div style="text-align:center;">
+        <div style="font-size:var(--fs-xs);font-weight:var(--fw-bold);letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:var(--sp-xs);">JAWABAN TEREKAM</div>
+        <div id="attempt-badge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,183,77,.1);border:1px solid rgba(255,183,77,.25);border-radius:99px;padding:4px 14px;font-size:var(--fs-xs);color:rgba(255,183,77,.9);"></div>
+      </div>
+      <div class="review-transcript" id="review-transcript-text"></div>
+      <div class="review-actions">
+        <button id="btn-retry-answer" onclick="retryAnswer()">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4.95"/></svg>
+          Ulangi Jawaban
+        </button>
+        <button class="btn btn-primary" onclick="submitAnswer()" style="flex:1;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+          Kirim & Evaluasi
+        </button>
+      </div>
     </div>
   </div>
 
@@ -373,6 +418,9 @@ let mediaStream = null, micAnalyser = null, micAnimFrame = null;
 let recognition = null, useManual = false, recognitionStopping = false;
 let finalTranscript = '', interimTranscript = '';
 let timerSecs  = 120, timerInterval = null;
+let attemptCount = 0;
+const MAX_ATTEMPTS = 2;
+let pendingTranscript = '';
 
 /* ── Init UI ─────────────────────────────────────────────────────────────── */
 document.getElementById('start-role-badge').textContent = roleData.label;
@@ -490,6 +538,7 @@ function getTranscript() {
 function loadQuestion(idx) {
   const q = questions[idx];
   currentQ = idx;
+  attemptCount = 0;
   sessionStorage.setItem('currentQ', idx);
   document.getElementById('progress-label').textContent = `Pertanyaan ${idx+1} dari ${TOTAL_Q}`;
   document.getElementById('q-num-label').textContent    = `PERTANYAAN ${idx+1} DARI ${TOTAL_Q}`;
@@ -542,6 +591,7 @@ function setState(s) {
   selfVid.classList.remove('answering');
   recBadge.classList.remove('active');
   evalOv.classList.remove('visible');
+  document.getElementById('reviewing-overlay').classList.remove('visible');
   document.getElementById('btn-skip-audio').classList.remove('visible');
 
   if (s === 'ai-speaking') {
@@ -574,6 +624,19 @@ function setState(s) {
     btnDone.style.opacity = '.4'; btnDone.style.pointerEvents = 'none';
     statusTxt.textContent = 'AI menganalisis jawaban…';
     sdot.className = 'sdot';
+  } else if (s === 'reviewing') {
+    aiAv.className = '';
+    stopMicBars();
+    btnDone.style.opacity = '.4'; btnDone.style.pointerEvents = 'none';
+    statusTxt.textContent = 'Tinjau jawaban Anda';
+    sdot.className = 'sdot';
+    const ov = document.getElementById('reviewing-overlay');
+    ov.classList.add('visible');
+    document.getElementById('review-transcript-text').textContent = pendingTranscript || '(tidak ada transkrip)';
+    const remaining = MAX_ATTEMPTS - attemptCount;
+    document.getElementById('attempt-badge').textContent =
+      remaining > 0 ? `Sisa ulangi: ${remaining}x` : 'Tidak ada kesempatan ulangi';
+    document.getElementById('btn-retry-answer').disabled = (remaining <= 0);
   }
 }
 
@@ -707,8 +770,8 @@ function updateTimerUI() {
   chip.className = timerSecs <= 10 ? 'timer-chip crit' : timerSecs <= 30 ? 'timer-chip warn' : 'timer-chip';
 }
 
-/* ── Done button ─────────────────────────────────────────────────────────── */
-async function onDone() {
+/* ── Done / Review / Retry / Submit ─────────────────────────────────────── */
+function onDone() {
   if (state !== 'candidate-answering') return;
   clearInterval(timerInterval);
   stopRecognition();
@@ -723,11 +786,25 @@ async function onDone() {
 
   if (transcript.length < 20) {
     const ok = confirm('Jawaban sangat pendek. Yakin ingin melanjutkan?');
-    if (!ok) { startRecognition(); return; }
+    if (!ok) { startRecognition(); startTimer(); return; }
   }
 
-  setState('evaluating');
+  attemptCount++;
+  pendingTranscript = transcript;
   document.getElementById('transcript-wrap').style.display = 'none';
+  setState('reviewing');
+}
+
+function retryAnswer() {
+  if (state !== 'reviewing') return;
+  pendingTranscript = '';
+  setState('candidate-answering');
+}
+
+async function submitAnswer() {
+  if (state !== 'reviewing') return;
+  const transcript = pendingTranscript;
+  setState('evaluating');
 
   const q = questions[currentQ];
   let result = null;
