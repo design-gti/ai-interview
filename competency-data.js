@@ -309,7 +309,9 @@ Balas HANYA dalam JSON (tanpa markdown fence):
 
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err?.error?.message || `HTTP ${res.status}`);
+    // Proxy returns {error: "string"}; OpenAI returns {error: {message: "..."}}
+    const msg = typeof err?.error === 'string' ? err.error : err?.error?.message;
+    throw new Error(msg || `HTTP ${res.status}`);
   }
 
   const data = await res.json();
