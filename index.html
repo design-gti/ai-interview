@@ -101,7 +101,7 @@
   </div>
 
   <h1 class="page-title">Asesmen Kompetensi Sales</h1>
-  <p class="page-sub">Pilih role Anda, lalu masukkan kunci API untuk memulai sesi.</p>
+  <p class="page-sub">Pilih role Anda untuk memulai sesi.</p>
 
   <!-- Role selection -->
   <div class="role-grid">
@@ -144,32 +144,6 @@
     </div>
   </div>
 
-  <!-- API Key -->
-  <div id="api-key-wrap" style="width:100%;max-width:680px;margin-bottom:var(--sp-sm);">
-    <!-- Saved state -->
-    <div id="api-key-saved" style="display:none;align-items:center;justify-content:space-between;
-         background:var(--color-surface);border-radius:var(--r-lg);box-shadow:var(--shadow-card);
-         padding:var(--sp-sm) var(--sp-md);">
-      <div style="display:flex;align-items:center;gap:var(--sp-xs);font-size:var(--fs-sm);color:var(--color-text-dim);">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--c-success-5)" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-        API key tersimpan
-      </div>
-      <button onclick="clearApiKey()" style="font-size:var(--fs-xs);color:var(--c-primary-5);
-              background:none;border:none;cursor:pointer;font-family:inherit;padding:2px 0;">Ubah</button>
-    </div>
-    <!-- Input state -->
-    <div id="api-key-input-wrap" class="config-card" style="display:none;">
-      <label class="config-label" for="api-key">Kunci API OpenAI</label>
-      <div class="config-row">
-        <input type="password" id="api-key" placeholder="sk-…" autocomplete="off" oninput="checkReady()">
-      </div>
-      <div class="key-hint">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Disimpan di browser ini saja. Dapatkan key di platform.openai.com
-      </div>
-    </div>
-  </div>
-
   <div class="cta-wrap">
     <button class="btn btn-primary btn-lg" id="btn-start" onclick="startSession()">
       Mulai Sesi Asesmen
@@ -185,34 +159,6 @@
 <script>
   let selectedRole = null;
 
-  window.addEventListener('DOMContentLoaded', () => {
-    const saved = localStorage.getItem('apiKey');
-    if (saved) {
-      showSavedState();
-    } else {
-      showInputState();
-    }
-    checkReady();
-  });
-
-  function showSavedState() {
-    document.getElementById('api-key-saved').style.display = 'flex';
-    document.getElementById('api-key-input-wrap').style.display = 'none';
-  }
-
-  function showInputState() {
-    document.getElementById('api-key-saved').style.display = 'none';
-    document.getElementById('api-key-input-wrap').style.display = 'block';
-  }
-
-  function clearApiKey() {
-    localStorage.removeItem('apiKey');
-    const inp = document.getElementById('api-key');
-    if (inp) inp.value = '';
-    showInputState();
-    checkReady();
-  }
-
   function selectRole(role) {
     selectedRole = role;
     document.getElementById('card-hunter').classList.toggle('selected', role === 'hunter');
@@ -221,23 +167,13 @@
   }
 
   function checkReady() {
-    const hasSavedKey = !!localStorage.getItem('apiKey');
-    const inputEl = document.getElementById('api-key');
-    const typedKey = inputEl ? inputEl.value.trim() : '';
-    const hasKey = hasSavedKey || typedKey.length > 0;
     const btn = document.getElementById('btn-start');
-    btn.classList.toggle('active', !!selectedRole && hasKey);
+    btn.classList.toggle('active', !!selectedRole);
   }
 
   function startSession() {
     if (!selectedRole) return;
-    const inputEl = document.getElementById('api-key');
-    const typed = inputEl ? inputEl.value.trim() : '';
-    const key = typed || localStorage.getItem('apiKey') || '';
-    if (!key) { showInputState(); return; }
-    if (typed) localStorage.setItem('apiKey', typed); // only overwrite if user typed a new one
     sessionStorage.setItem('role', selectedRole);
-    sessionStorage.setItem('apiKey', key);
     sessionStorage.removeItem('results');
     sessionStorage.removeItem('currentQ');
     sessionStorage.removeItem('transcripts');

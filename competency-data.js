@@ -262,7 +262,6 @@ async function evaluateAnswer(aspectCode, questionText, transcript, roleKey) {
   const aspect   = FRAMEWORK.aspects[aspectCode];
   const target   = role.targets[aspectCode];
   const isLocal  = ['localhost', '127.0.0.1'].includes(window.location.hostname);
-  const apiKey   = sessionStorage.getItem('apiKey') || localStorage.getItem('apiKey') || '';
 
   const prompt = `Kamu evaluator kompetensi untuk posisi ${role.label}.
 
@@ -290,16 +289,15 @@ Aturan penting:
 Balas HANYA dalam JSON (tanpa markdown fence):
 {"level": <angka 1-5>, "rationale": "<2-3 kalimat bahasa Indonesia yang menyebut bukti spesifik dari jawaban>"}`;
 
+  // API key lives only in Vercel env var (OPENAI_API_KEY) — never in the browser.
+  // Localhost calls the deployed proxy; production uses the relative path.
   const endpoint = isLocal
-    ? 'https://api.openai.com/v1/chat/completions'
+    ? 'https://ai-interview-lake-one.vercel.app/api/evaluate'
     : '/api/evaluate';
-  const headers = isLocal
-    ? { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' }
-    : { 'Content-Type': 'application/json' };
 
   const res = await fetch(endpoint, {
     method: 'POST',
-    headers,
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o-mini',
       max_tokens: 300,
