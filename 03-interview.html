@@ -540,6 +540,7 @@ function loadQuestion(idx) {
   currentQ = idx;
   attemptCount = 0;
   sessionStorage.setItem('currentQ', idx);
+  document.getElementById('error-toast').classList.remove('visible');
   document.getElementById('progress-label').textContent = `Pertanyaan ${idx+1} dari ${TOTAL_Q}`;
   document.getElementById('q-num-label').textContent    = `PERTANYAAN ${idx+1} DARI ${TOTAL_Q}`;
   document.getElementById('progress-bar').style.width   = `${(idx / TOTAL_Q) * 100}%`;
