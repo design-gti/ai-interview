@@ -234,14 +234,14 @@ body { display: flex; flex-direction: column; background: #070f1a; color: #fff; 
 
 /* ── Error toast ─────────────────────────────────────────────────────────── */
 #error-toast {
-  position: fixed; top: 60px; left: 50%; transform: translateX(-50%) translateY(-120%);
+  position: fixed; top: 60px; left: 50%; transform: translateX(-50%);
   background: #6b1010; border: 1px solid #a33; border-radius: 10px;
-  padding: 10px 18px; display: flex; align-items: center; gap: 10px;
+  padding: 10px 18px; display: none; align-items: center; gap: 10px;
   font-size: var(--fs-sm); color: #fcc; z-index: 100;
-  transition: transform .3s ease; max-width: 500px; text-align: center;
+  max-width: 500px; text-align: center;
   box-shadow: 0 4px 20px rgba(0,0,0,.5);
 }
-#error-toast.visible { transform: translateX(-50%) translateY(0); }
+#error-toast.visible { display: flex; }
 </style>
 </head>
 <body>
@@ -812,6 +812,7 @@ async function submitAnswer() {
   try {
     const ev = await evaluateAnswer(q.aspect, q.text, transcript, role);
     result = { aspect: q.aspect, question: q.text, transcript, level: ev.level, label: ev.label, rationale: ev.rationale, error: false };
+    document.getElementById('error-toast').classList.remove('visible');
   } catch (err) {
     result = { aspect: q.aspect, question: q.text, transcript, level: null, label: null, rationale: null, error: true, errMsg: err.message };
     const toast = document.getElementById('error-toast');
