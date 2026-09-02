@@ -305,6 +305,9 @@ body { display: flex; flex-direction: column; background: #070f1a; color: #fff; 
         <div style="font-size:var(--fs-xs);font-weight:var(--fw-bold);letter-spacing:.08em;color:rgba(255,255,255,.4);margin-bottom:var(--sp-xs);">JAWABAN TEREKAM</div>
         <div id="attempt-badge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,183,77,.1);border:1px solid rgba(255,183,77,.25);border-radius:99px;padding:4px 14px;font-size:var(--fs-xs);color:rgba(255,183,77,.9);"></div>
       </div>
+      <video id="review-video" controls muted autoplay playsinline
+        style="display:none;width:100%;max-width:520px;border-radius:10px;
+               object-fit:cover;transform:scaleX(-1);background:#0a1622;max-height:150px;"></video>
       <div class="review-transcript" id="review-transcript-text"></div>
       <div class="review-actions">
         <button id="btn-retry-answer" onclick="retryAnswer()">
@@ -419,8 +422,9 @@ let recognition = null, useManual = false, recognitionStopping = false;
 let finalTranscript = '', interimTranscript = '';
 let timerSecs  = 120, timerInterval = null;
 let attemptCount = 0;
-const MAX_ATTEMPTS = 2;
+const MAX_ATTEMPTS = 1;
 let pendingTranscript = '';
+let mediaRecorder = null, recordedChunks = [], reviewVideoURL = null;
 
 /* ── Init UI ─────────────────────────────────────────────────────────────── */
 document.getElementById('start-role-badge').textContent = roleData.label;
@@ -529,6 +533,35 @@ function stopRecognition() {
   }
 }
 
+/* ── Video recording ─────────────────────────────────────────────────────── */
+function startRecording() {
+  if (!mediaStream || !window.MediaRecorder) return;
+  recordedChunks = [];
+  try {
+    const mimeType = ['video/webm;codecs=vp8,opus','video/webm','video/mp4']
+      .find(t => MediaRecorder.isTypeSupported(t)) || '';
+    mediaRecorder = new MediaRecorder(mediaStream, mimeType ? { mimeType } : {});
+  } catch(e) { return; }
+  mediaRecorder.ondataavailable = e => { if (e.data?.size > 0) recordedChunks.push(e.data); };
+  mediaRecorder.start(100);
+}
+
+function stopRecording() {
+  return new Promise(resolve => {
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') { resolve(); return; }
+    mediaRecorder.onstop = () => {
+      if (reviewVideoURL) { URL.revokeObjectURL(reviewVideoURL); reviewVideoURL = null; }
+      if (recordedChunks.length > 0) {
+        const blob = new Blob(recordedChunks, { type: recordedChunks[0].type || 'video/webm' });
+        reviewVideoURL = URL.createObjectURL(blob);
+      }
+      recordedChunks = [];
+      resolve();
+    };
+    try { mediaRecorder.stop(); } catch(e) { resolve(); }
+  });
+}
+
 function getTranscript() {
   if (useManual) return document.getElementById('transcript-text').textContent.trim();
   return (finalTranscript + interimTranscript).trim();
@@ -541,6 +574,9 @@ function loadQuestion(idx) {
   attemptCount = 0;
   sessionStorage.setItem('currentQ', idx);
   document.getElementById('error-toast').classList.remove('visible');
+  const reviewVid = document.getElementById('review-video');
+  reviewVid.pause(); reviewVid.src = ''; reviewVid.style.display = 'none';
+  if (reviewVideoURL) { URL.revokeObjectURL(reviewVideoURL); reviewVideoURL = null; }
   document.getElementById('progress-label').textContent = `Pertanyaan ${idx+1} dari ${TOTAL_Q}`;
   document.getElementById('q-num-label').textContent    = `PERTANYAAN ${idx+1} DARI ${TOTAL_Q}`;
   document.getElementById('progress-bar').style.width   = `${(idx / TOTAL_Q) * 100}%`;
@@ -617,6 +653,7 @@ function setState(s) {
     startMicBars();
     startTimer();
     startRecognition();
+    startRecording();
   } else if (s === 'evaluating') {
     aiAv.className = '';
     aiPanel.classList.add('dimmed');
@@ -634,6 +671,15 @@ function setState(s) {
     const ov = document.getElementById('reviewing-overlay');
     ov.classList.add('visible');
     document.getElementById('review-transcript-text').textContent = pendingTranscript || '(tidak ada transkrip)';
+    const reviewVid = document.getElementById('review-video');
+    if (reviewVideoURL) {
+      reviewVid.src = reviewVideoURL;
+      reviewVid.style.display = 'block';
+      reviewVid.currentTime = 0;
+      reviewVid.play().catch(() => {});
+    } else {
+      reviewVid.style.display = 'none';
+    }
     const remaining = MAX_ATTEMPTS - attemptCount;
     document.getElementById('attempt-badge').textContent =
       remaining > 0 ? `Sisa ulangi: ${remaining}x` : 'Tidak ada kesempatan ulangi';
@@ -772,7 +818,7 @@ function updateTimerUI() {
 }
 
 /* ── Done / Review / Retry / Submit ─────────────────────────────────────── */
-function onDone() {
+async function onDone() {
   if (state !== 'candidate-answering') return;
   clearInterval(timerInterval);
   stopRecognition();
@@ -793,12 +839,16 @@ function onDone() {
   attemptCount++;
   pendingTranscript = transcript;
   document.getElementById('transcript-wrap').style.display = 'none';
+  await stopRecording();
   setState('reviewing');
 }
 
 function retryAnswer() {
   if (state !== 'reviewing') return;
   pendingTranscript = '';
+  const reviewVid = document.getElementById('review-video');
+  reviewVid.pause(); reviewVid.src = ''; reviewVid.style.display = 'none';
+  if (reviewVideoURL) { URL.revokeObjectURL(reviewVideoURL); reviewVideoURL = null; }
   setState('candidate-answering');
 }
 
