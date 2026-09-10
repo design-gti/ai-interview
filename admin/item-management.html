@@ -1,0 +1,903 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Item Management — Admin · Talentlytica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Open+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  :root {
+    --nm-bg: #ffffff; --nm-fg: #0f172a; --nm-card: #ffffff;
+    --nm-border: #e2e8f0; --nm-muted: #f8fafc; --nm-muted-fg: #64748b;
+    --nm-input: #e2e8f0; --nm-radius: 0.625rem;
+    --nm-status-aktif-bg: #d1fae5; --nm-status-aktif-fg: #065f46;
+    --nm-status-draft-bg: #f1f5f9; --nm-status-draft-fg: #334155;
+    --nm-status-archived-bg: #f1f5f9; --nm-status-archived-fg: #94a3b8;
+    --nm-status-published-bg: #dbeafe; --nm-status-published-fg: #1e40af;
+  }
+  html, body { height: 100%; margin: 0; }
+  body { background: #fff; font-family: 'Inter','Open Sans',sans-serif; display: flex; height: 100vh; overflow: hidden; }
+
+  /* ── Sidebar ─────────────────────────────────────────────────────────────── */
+  .sidebar {
+    width: 240px; flex-shrink: 0; background: #0f172a; color: #fff;
+    display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: width .25s;
+  }
+  .sidebar.collapsed { width: 64px; }
+  .sb-header {
+    height: 60px; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 12px; border-bottom: 1px solid rgba(255,255,255,.1); flex-shrink: 0;
+  }
+  .sb-logo { display: flex; align-items: center; gap: 10px; }
+  .sb-logo-icon { width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; }
+  .sb-logo-text .t1 { font-size: 12px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+  .sb-logo-text .t2 { font-size: 10px; color: #94a3b8; white-space: nowrap; }
+  .sb-collapse-btn { width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: #94a3b8; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: background .15s, color .15s; }
+  .sb-collapse-btn:hover { background: #1e293b; color: #fff; }
+  .sb-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .sb-nav::-webkit-scrollbar { width: 4px; }
+  .sb-nav::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  .sb-section { border-top: 1px solid rgba(255,255,255,.06); padding-top: 6px; margin-top: 4px; }
+  .sb-section:first-child { border-top: none; margin-top: 0; }
+  .sb-section-title { padding: 4px 12px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: color .15s; }
+  .sb-section-title.active-sect { color: #60a5fa; }
+  .sb-section-title.dim-sect { color: #334155; }
+  .sb-section-title.dim-sect:hover { color: #475569; }
+  .sb-section-dot { width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; display: inline-block; margin-right: 5px; }
+  .sb-chevron { font-size: 10px; transition: transform .2s; }
+  .sb-chevron.open { transform: rotate(90deg); }
+  .sb-item { display: flex; align-items: center; gap: 10px; padding: 7px 12px 7px 14px; font-size: 12px; font-weight: 500; cursor: pointer; border-radius: 6px; margin: 1px 6px; border-left: 2px solid transparent; transition: background .12s, color .12s; text-decoration: none; white-space: nowrap; overflow: hidden; background: none; border-top: none; border-right: none; border-bottom: none; font-family: inherit; width: calc(100% - 12px); text-align: left; color: #94a3b8; }
+  .sb-item .sb-icon { font-size: 15px; flex-shrink: 0; opacity: .7; }
+  .sb-item span { overflow: hidden; text-overflow: ellipsis; }
+  .sb-item.active-section { background: #3b82f6; color: #fff; border-left-color: transparent; }
+  .sb-item.active-section .sb-icon { opacity: 1; }
+  .sb-item.dim-link { color: #334155; cursor: default; }
+  .sb-item:not(.dim-link):not(.active-section):hover { background: #1e293b; color: #e2e8f0; }
+  .sb-badge { margin-left: auto; font-size: 10px; background: #1e293b; color: #64748b; padding: 1px 6px; border-radius: 9999px; flex-shrink: 0; }
+  .sb-item.active-section .sb-badge { background: rgba(255,255,255,.2); color: #fff; }
+  .sidebar.collapsed .sb-logo-text, .sidebar.collapsed .sb-section-title span:not(.sb-section-dot), .sidebar.collapsed .sb-item span, .sidebar.collapsed .sb-badge, .sidebar.collapsed .sb-chevron { display: none; }
+  .sidebar.collapsed .sb-item { justify-content: center; padding: 8px; border-left: none; margin: 1px 4px; }
+  .sidebar.collapsed .sb-section-title { justify-content: center; padding: 6px; }
+  .sb-footer { padding: 10px 12px; border-top: 1px solid rgba(255,255,255,.1); font-size: 10px; color: #334155; flex-shrink: 0; }
+
+  /* ── Main area ───────────────────────────────────────────────────────────── */
+  .main-area { flex: 1; overflow: auto; display: flex; flex-direction: column; min-width: 0; }
+  .page-head { padding: 28px 28px 0; }
+  .page-title { font-size: 22px; font-weight: 700; color: var(--nm-fg); }
+  .page-sub { font-size: 13px; color: var(--nm-muted-fg); margin-top: 4px; }
+  main { padding: 0 28px 64px; }
+
+  /* ── KPI cards ───────────────────────────────────────────────────────────── */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 0; }
+  .kpi-card { border-radius: var(--nm-radius); padding: 16px 20px; display: flex; align-items: flex-start; justify-content: space-between; border: 1px solid transparent; }
+  .kpi-card .kpi-inner { display: flex; flex-direction: column; }
+  .kpi-card .kpi-inner p:first-child { font-size: 11px; font-weight: 600; opacity: .75; }
+  .kpi-card .kpi-inner p:last-child { font-size: 24px; font-weight: 700; margin-top: 4px; line-height: 1; }
+  .kpi-card svg { width: 24px; height: 24px; flex-shrink: 0; opacity: .5; margin-top: 4px; }
+  .kpi-blue  { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+  .kpi-green { background: #f0fdf4; color: #14532d; border-color: #bbf7d0; }
+  .kpi-amber { background: #fffbeb; color: #92400e; border-color: #fde68a; }
+  .kpi-slate { background: #f8fafc; color: #334155; border-color: #e2e8f0; }
+
+  /* ── Split pane ──────────────────────────────────────────────────────────── */
+  .split-pane { display: flex; gap: 0; border: 1px solid var(--nm-border); border-radius: var(--nm-radius); overflow: hidden; background: var(--nm-card); margin-top: 16px; min-height: 520px; }
+  .sp-left { width: 210px; flex-shrink: 0; border-right: 1px solid var(--nm-border); display: flex; flex-direction: column; overflow: hidden; }
+  .sp-left-head { padding: 8px 14px; background: #f8fafc; border-bottom: 1px solid var(--nm-border); font-size: 10px; font-weight: 700; color: var(--nm-muted-fg); text-transform: uppercase; letter-spacing: .06em; }
+  .sp-left-list { flex: 1; overflow-y: auto; }
+  .sp-cluster-btn { width: 100%; text-align: left; padding: 10px 14px; font-family: inherit; font-size: 13px; font-weight: 500; background: none; border: none; border-left: 2px solid transparent; cursor: pointer; color: var(--nm-muted-fg); transition: background .1s, color .1s; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--nm-border); }
+  .sp-cluster-btn:hover { background: #f8fafc; color: var(--nm-fg); }
+  .sp-cluster-btn.active { font-weight: 600; }
+  .cl-acts { display: none; gap: 2px; margin-left: auto; flex-shrink: 0; }
+  .sp-cluster-btn:hover .cl-acts,
+  .sp-cluster-btn.active .cl-acts { display: flex; }
+  .cl-act-btn { border: none; background: none; cursor: pointer; padding: 2px 4px; border-radius: 4px; color: #64748b; font-size: 12px; line-height: 1; display: flex; align-items: center; }
+  .cl-act-btn:hover { background: #e2e8f0; color: #0f172a; }
+  .cl-act-btn.danger:hover { background: #fee2e2; color: #dc2626; }
+  .sp-cluster-count { font-size: 10px; background: #e2e8f0; color: #64748b; padding: 1px 6px; border-radius: 9999px; flex-shrink: 0; }
+  .sp-cluster-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; display: inline-block; }
+  .sp-left-add { padding: 10px 14px; font-size: 12px; color: #3b82f6; background: none; border: none; border-top: 1px solid var(--nm-border); cursor: pointer; text-align: left; font-family: inherit; transition: background .1s; width: 100%; }
+  .sp-left-add:hover { background: #eff6ff; }
+
+  /* ── Right pane ──────────────────────────────────────────────────────────── */
+  .sp-right { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .sp-toolbar { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: #f8fafc; border-bottom: 1px solid var(--nm-border); }
+  .sp-toolbar-title { font-size: 13px; font-weight: 600; color: var(--nm-fg); }
+  .sp-toolbar-count { font-size: 11px; color: var(--nm-muted-fg); background: #e2e8f0; padding: 1px 8px; border-radius: 9999px; }
+  .sp-table-wrap { flex: 1; overflow: auto; }
+
+  /* ── Hierarchical bank table ─────────────────────────────────────────────── */
+  .bank-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .bank-table th { position: sticky; top: 0; z-index: 2; background: #f8fafc; border-bottom: 2px solid var(--nm-border); border-right: 1px solid var(--nm-border); padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: var(--nm-muted-fg); white-space: nowrap; }
+  .bank-table th:last-child { border-right: none; }
+  .bank-table td { border-bottom: 1px solid var(--nm-border); border-right: 1px solid var(--nm-border); padding: 10px 12px; vertical-align: top; }
+  .bank-table td:last-child { border-right: none; }
+  .bank-table tr:last-child td { border-bottom: none; }
+  .bank-table tr.bank-row:hover td.item-td { background: #f8fafc; }
+
+  .cluster-td { vertical-align: top; padding: 14px 12px !important; min-width: 130px; }
+  .cluster-td-inner { display: flex; flex-direction: column; gap: 6px; }
+  .cluster-td-name { font-weight: 700; font-size: 12px; display: flex; align-items: center; gap: 6px; }
+  .cluster-td-acts { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+
+  .aspek-td { vertical-align: top; padding: 12px !important; min-width: 160px; max-width: 200px; }
+  .aspek-td-code { font-size: 10px; font-weight: 700; color: var(--nm-muted-fg); letter-spacing: .05em; margin-bottom: 2px; }
+  .aspek-td-name { font-weight: 600; font-size: 12px; color: var(--nm-fg); line-height: 1.3; margin-bottom: 4px; }
+  .aspek-td-desc { font-size: 11px; color: var(--nm-muted-fg); margin-bottom: 6px; line-height: 1.4; }
+  .aspek-td-acts { display: flex; gap: 8px; flex-wrap: wrap; }
+
+  .item-td { vertical-align: middle; max-width: 320px; }
+  .item-text { font-size: 12px; line-height: 1.5; color: var(--nm-fg); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .prop-td { vertical-align: middle; white-space: nowrap; text-align: center; width: 60px; }
+  .prop-td.wide { width: 80px; }
+
+  .tipe-pill { background: #ede9fe; color: #6d28d9; font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 9999px; }
+  .prop-muted { font-size: 12px; color: var(--nm-muted-fg); }
+
+  .empty-td { text-align: center; color: var(--nm-muted-fg); font-size: 12px; font-style: italic; padding: 16px !important; }
+
+  /* ── Toggle switch ───────────────────────────────────────────────────────── */
+  .toggle-switch { cursor: pointer; display: inline-flex; align-items: center; }
+  .toggle-switch input[type=checkbox] { display: none; }
+  .toggle-track { width: 30px; height: 17px; border-radius: 9px; background: #cbd5e1; transition: background .2s; position: relative; display: inline-block; }
+  .toggle-track::after { content: ''; position: absolute; top: 2.5px; left: 2.5px; width: 12px; height: 12px; border-radius: 50%; background: #fff; transition: left .2s; box-shadow: 0 1px 2px rgba(0,0,0,.25); }
+  .toggle-switch input:checked + .toggle-track { background: #22c55e; }
+  .toggle-switch input:checked + .toggle-track::after { left: 15.5px; }
+
+  /* ── Icon buttons ────────────────────────────────────────────────────────── */
+  .icon-btn { border: none; background: none; cursor: pointer; font-size: 14px; padding: 3px 5px; border-radius: 4px; line-height: 1; transition: background .1s; }
+  .icon-btn:hover { background: #f1f5f9; }
+  .icon-btn.danger:hover { background: #fee2e2; }
+  .acts { display: flex; gap: 8px; }
+
+  /* ── Shared action link ──────────────────────────────────────────────────── */
+  .link-act { color: #3b82f6; font-weight: 500; cursor: pointer; font-size: 12px; white-space: nowrap; }
+  .link-act:hover { text-decoration: underline; }
+  .link-act.danger { color: #dc2626; }
+
+  /* ── Status badge ────────────────────────────────────────────────────────── */
+  .status-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 600; white-space: nowrap; border: 1px solid; }
+  .sb-aktif     { background: var(--nm-status-aktif-bg);     color: var(--nm-status-aktif-fg);     border-color: #6ee7b7; }
+  .sb-draft     { background: var(--nm-status-draft-bg);     color: var(--nm-status-draft-fg);     border-color: #fcd34d; }
+  .sb-archived  { background: var(--nm-status-archived-bg);  color: var(--nm-status-archived-fg);  border-color: #cbd5e1; }
+  .sb-published { background: var(--nm-status-published-bg); color: var(--nm-status-published-fg); border-color: #93c5fd; }
+  .sb-error     { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+  /* ── Modal ───────────────────────────────────────────────────────────────── */
+  .modal-back { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: flex-start; justify-content: center; z-index: 200; padding: 40px 16px; overflow-y: auto; }
+  .modal-back.open { display: flex; }
+  .modal { background: var(--nm-card); border-radius: var(--nm-radius); box-shadow: 0 8px 32px rgba(0,0,0,.15); width: 100%; max-width: 640px; padding: 24px; }
+  .modal h3 { font-size: 17px; font-weight: 700; margin-bottom: 16px; color: var(--nm-fg); }
+  .f-label { display: block; font-size: 12px; font-weight: 600; margin: 12px 0 4px; color: var(--nm-fg); }
+  .f-label .req { color: #dc2626; }
+  .modal input[type=text], .modal input[type=number], .modal textarea, .modal select { width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--nm-input); font-family: inherit; font-size: 13px; background: var(--nm-bg); color: var(--nm-fg); box-sizing: border-box; }
+  .modal textarea { resize: vertical; min-height: 64px; }
+  .modal input:focus, .modal textarea:focus, .modal select:focus { outline: none; box-shadow: 0 0 0 2px #bfdbfe; }
+  .f-row { display: flex; gap: 10px; }
+  .f-row > div { flex: 1; }
+  .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .hint { font-size: 11px; color: var(--nm-muted-fg); margin-top: 4px; }
+  .rubrik-lvl { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+  .lvl-chip { flex-shrink: 0; width: 74px; text-align: center; font-size: 11px; font-weight: 700; padding: 8px 0; border-radius: 6px; background: var(--nm-muted); color: var(--nm-muted-fg); }
+
+  /* ── Color picker ────────────────────────────────────────────────────────── */
+  .color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+  .color-dot-opt { width: 24px; height: 24px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: transform .1s, border-color .1s; flex-shrink: 0; }
+  .color-dot-opt:hover { transform: scale(1.15); }
+  .color-dot-opt.selected { border-color: #0f172a; transform: scale(1.1); }
+
+  /* ── Paket tab ───────────────────────────────────────────────────────────── */
+  .filter-card { background: transparent; padding: 14px 0; margin: 4px 0; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 20px; }
+  .filter-spacer { flex: 1; }
+  .paket-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+  .paket-card { background: var(--nm-card); border-radius: var(--nm-radius); border: 1px solid var(--nm-border); padding: 20px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
+  .paket-name { font-size: 16px; font-weight: 700; color: var(--nm-fg); }
+  .paket-meta { font-size: 11px; color: var(--nm-muted-fg); }
+  .paket-foot { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+  .lock-note { font-size: 11px; color: #b45309; display: flex; align-items: center; gap: 4px; }
+  .item-row { display: grid; grid-template-columns: 28px 1fr 90px 110px 32px; gap: 8px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--nm-border); font-size: 13px; }
+  .item-row .q-preview { font-size: 11px; color: var(--nm-muted-fg); margin-top: 2px; }
+  .ord-btns { display: flex; flex-direction: column; gap: 2px; }
+  .ord-btns button { border: 1px solid var(--nm-border); background: var(--nm-bg); border-radius: 4px; cursor: pointer; font-size: 9px; line-height: 1.4; color: var(--nm-fg); padding: 0 4px; }
+  .rm-item { border: 0; background: none; cursor: pointer; color: #dc2626; font-size: 18px; }
+  .empty { text-align: center; color: var(--nm-muted-fg); padding: 40px; font-size: 13px; }
+
+  /* ── Toast ───────────────────────────────────────────────────────────────── */
+  #toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: #1e293b; color: #fff; padding: 10px 20px; border-radius: 9999px; font-size: 13px; transition: transform .25s; z-index: 300; box-shadow: 0 4px 16px rgba(0,0,0,.2); }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sb-header">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">T</div>
+      <div class="sb-logo-text"><div class="t1">Talentlytica</div><div class="t2">Admin Panel</div></div>
+    </div>
+    <button class="sb-collapse-btn" onclick="toggleSidebar()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-title active-sect" onclick="toggleSection('s-assess')">
+        <span><span class="sb-section-dot"></span>Assessment</span>
+        <span class="sb-chevron open" id="chev-s-assess">▶</span>
+      </div>
+      <div class="sb-items" id="s-assess">
+        <button class="sb-item active-section" id="nav-bank" onclick="switchTab('bank')">
+          <svg class="sb-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Item Management</span><span class="sb-badge" id="cnt-bank"></span>
+        </button>
+        <button class="sb-item" id="nav-paket" onclick="switchTab('paket')">
+          <svg class="sb-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span>Paket Interview</span><span class="sb-badge" id="cnt-paket"></span>
+        </button>
+        <a class="sb-item" href="assignment.html">
+          <svg class="sb-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Assignment</span>
+        </a>
+        <a class="sb-item" href="monitoring.html">
+          <svg class="sb-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Monitoring</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+  <div class="sb-footer">v0.4 · prototype</div>
+</aside>
+
+<!-- ── Main area ── -->
+<div class="main-area">
+  <div class="page-head">
+    <div class="page-title" id="page-title">Bank Item</div>
+    <div class="page-sub" id="page-sub">Kelola kompetensi hierarkis: Cluster → Aspek → Item Pertanyaan</div>
+  </div>
+  <main>
+
+    <!-- ── TAB BANK ITEM ── -->
+    <section id="tab-bank">
+      <div class="split-pane" style="margin-top:16px;">
+        <!-- Left: Cluster nav -->
+        <div class="sp-left">
+          <div class="sp-left-head">CLUSTERS</div>
+          <div class="sp-left-list" id="sp-cluster-list"></div>
+          <button class="sp-left-add" onclick="openClusterModal()">+ Add Cluster</button>
+        </div>
+        <!-- Right: hierarchical table -->
+        <div class="sp-right">
+          <div class="sp-toolbar">
+            <span class="sp-toolbar-title" id="sp-bank-title">All Clusters</span>
+            <span class="sp-toolbar-count" id="sp-bank-count">0 item</span>
+            <div style="flex:1;"></div>
+            <button class="btn btn-primary btn-sm" onclick="openItemModal()">+ Item Baru</button>
+          </div>
+          <div class="sp-table-wrap">
+            <table class="bank-table">
+              <thead><tr>
+                <th style="min-width:130px;">Cluster</th>
+                <th style="min-width:170px;">Aspek</th>
+                <th>Item Pertanyaan</th>
+                <th class="prop-td">Tipe</th>
+                <th class="prop-td">Aktif</th>
+                <th class="prop-td wide">Aksi</th>
+              </tr></thead>
+              <tbody id="tb-bank"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TAB PAKET ── -->
+    <section id="tab-paket" hidden>
+      <div style="border:1px solid var(--nm-border);border-radius:var(--nm-radius);overflow:hidden;margin-top:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:#f8fafc;border-bottom:1px solid var(--nm-border);">
+          <span style="font-size:13px;font-weight:600;color:var(--nm-fg);" id="paket-count-label">Paket Interview</span>
+          <button class="btn btn-primary btn-sm" onclick="openPaketModal()">+ Paket Baru</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="bank-table" id="tb-paket">
+            <thead><tr>
+              <th>Nama Paket</th>
+              <th style="width:60px;text-align:center;">Item</th>
+              <th style="width:100px;">Status</th>
+              <th style="width:120px;">Aksi</th>
+            </tr></thead>
+            <tbody id="grid-paket"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- ── MODAL: CLUSTER (NEW) ── -->
+<div class="modal-back" id="m-cluster"><div class="modal" style="max-width:480px;">
+  <h3 id="m-cluster-title">Cluster Baru</h3>
+  <label class="f-label">Nama Cluster <span class="req">*</span></label>
+  <input type="text" id="cl-nama" placeholder="cth. Soft Skills, Technical Skills…">
+  <label class="f-label">Warna</label>
+  <div class="color-picker" id="cl-color-picker"></div>
+  <input type="hidden" id="cl-warna" value="#3b82f6">
+  <label class="f-label">Deskripsi <span style="font-weight:400;color:var(--nm-muted-fg);">(opsional)</span></label>
+  <textarea id="cl-desc" rows="2" placeholder="Deskripsi singkat cluster ini…"></textarea>
+  <div class="modal-foot">
+    <button class="btn btn-outline-neutral btn-sm" onclick="closeModal('m-cluster')">Batal</button>
+    <button class="btn btn-primary btn-sm" onclick="saveCluster()">Simpan</button>
+  </div>
+</div></div>
+
+<!-- ── MODAL: ASPEK ── -->
+<div class="modal-back" id="m-aspek"><div class="modal">
+  <h3 id="m-aspek-title">Aspek Baru</h3>
+  <div class="f-row">
+    <div style="flex:0 0 110px;"><label class="f-label">Kode <span class="req">*</span></label><input type="text" id="a-kode" maxlength="4" placeholder="PS"></div>
+    <div><label class="f-label">Nama Aspek <span class="req">*</span></label><input type="text" id="a-nama" placeholder="Persuasi"></div>
+    <div style="flex:0 0 160px;"><label class="f-label">Cluster <span class="req">*</span></label><select id="a-cluster"></select></div>
+  </div>
+  <label class="f-label">Deskripsi</label>
+  <textarea id="a-desc" rows="2" placeholder="Deskripsi singkat aspek…"></textarea>
+  <label class="f-label" style="margin-top:12px;">Rubrik 5 Level <span class="req">*</span></label>
+  <p class="hint" style="margin-bottom:8px;">Indikator perilaku per level — dikirim ke AI sebagai dasar skoring setiap evaluasi jawaban.</p>
+  <div id="a-rubrik"></div>
+  <div class="modal-foot">
+    <button class="btn btn-outline-neutral btn-sm" onclick="closeModal('m-aspek')">Batal</button>
+    <button class="btn btn-primary btn-sm" onclick="saveAspek()">Simpan</button>
+  </div>
+</div></div>
+
+<!-- ── MODAL: ITEM ── -->
+<div class="modal-back" id="m-item"><div class="modal">
+  <h3 id="m-item-title">Pertanyaan Baru</h3>
+  <label class="f-label">Aspek <span class="req">*</span></label>
+  <select id="i-aspek"></select>
+  <p class="hint">Pertanyaan selalu menempel ke aspek — rubrik aspek inilah yang dipakai AI untuk menilai jawabannya.</p>
+  <label class="f-label">Teks Pertanyaan (dibacakan TTS) <span class="req">*</span></label>
+  <textarea id="i-text" rows="4" placeholder="Ceritakan situasi di mana Anda…"></textarea>
+  <div class="modal-foot">
+    <button class="btn btn-outline-neutral btn-sm" onclick="closeModal('m-item')">Batal</button>
+    <button class="btn btn-primary btn-sm" id="i-save-btn" onclick="saveItem()">Simpan sebagai Draft</button>
+  </div>
+</div></div>
+
+<!-- ── MODAL: PAKET ── -->
+<div class="modal-back" id="m-paket"><div class="modal" style="max-width:760px;">
+  <h3 id="m-paket-title">Paket Baru</h3>
+  <div id="p-lockwarn" style="display:none;margin-bottom:12px;padding:10px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;font-size:12px;color:#92400e;">🔒 Paket ini sudah pernah di-assign — dikunci. Untuk mengubah, duplikasi sebagai versi baru.</div>
+  <label class="f-label">Nama Paket <span class="req">*</span></label>
+  <input type="text" id="p-nama" placeholder="Sales Hunter v1">
+  <label style="margin-top:12px;font-size:13px;display:flex;align-items:center;gap:6px;cursor:pointer;">
+    <input type="checkbox" id="p-showresult"> Tampilkan hasil ke kandidat setelah selesai
+  </label>
+  <label class="f-label" style="margin-top:16px;">Susunan Item</label>
+  <p class="hint" style="margin-bottom:8px;">Per item: urutan, target level, dan bobot kepentingan.</p>
+  <div class="item-row" style="font-size:11px;color:var(--nm-muted-fg);border-bottom:1px solid var(--nm-border);"><span></span><span>ASPEK · PERTANYAAN</span><span>TARGET</span><span>BOBOT</span><span></span></div>
+  <div id="p-items"></div>
+  <div style="display:flex;gap:10px;margin-top:10px;align-items:center;">
+    <select id="p-add-item" style="flex:1;padding:7px 10px;border:1px solid var(--nm-input);border-radius:6px;font-size:13px;font-family:inherit;"></select>
+    <button class="btn btn-outline btn-sm" onclick="paketAddItem()">+ Tambah</button>
+  </div>
+  <div class="modal-foot">
+    <button class="btn btn-outline-neutral btn-sm" onclick="closeModal('m-paket')">Batal</button>
+    <button class="btn btn-primary btn-sm" id="p-save-btn" onclick="savePaket()">Simpan</button>
+  </div>
+</div></div>
+
+<div id="toast"></div>
+<script src="../competency-data.js"></script>
+<script>
+const LS_KEY = 'admin_item_mgmt_v1';
+const LEVELS = FRAMEWORK.levelLabels;
+
+const PRESET_COLORS = [
+  { warna:'#3b82f6', bg:'#eff6ff', border:'#bfdbfe', text:'#1d4ed8' },
+  { warna:'#10b981', bg:'#f0fdf4', border:'#bbf7d0', text:'#065f46' },
+  { warna:'#f59e0b', bg:'#fffbeb', border:'#fde68a', text:'#92400e' },
+  { warna:'#8b5cf6', bg:'#f5f3ff', border:'#ddd6fe', text:'#6d28d9' },
+  { warna:'#ef4444', bg:'#fef2f2', border:'#fecaca', text:'#991b1b' },
+  { warna:'#06b6d4', bg:'#ecfeff', border:'#a5f3fc', text:'#0e7490' },
+  { warna:'#f97316', bg:'#fff7ed', border:'#fed7aa', text:'#9a3412' },
+  { warna:'#ec4899', bg:'#fdf2f8', border:'#fbcfe8', text:'#9d174d' },
+];
+
+function clusterTheme(warna) {
+  return PRESET_COLORS.find(p => p.warna === warna) || { warna, bg:'#f8fafc', border:'#e2e8f0', text:'#334155' };
+}
+
+let DB;
+
+function seed() {
+  const clusters = [
+    { id:'CL1', nama:'Soft Skills',      warna:'#3b82f6', desc:'' },
+    { id:'CL2', nama:'Technical Skills', warna:'#10b981', desc:'' },
+  ];
+  const aspects = Object.entries(FRAMEWORK.aspects).map(([code, a]) => ({
+    code, name: a.name,
+    clusterId: a.category === 'soft' ? 'CL1' : 'CL2',
+    category: a.category,
+    desc: '', levels: [...a.levels], status: 'Aktif'
+  }));
+  let iid = 1;
+  const items = [];
+  for (const role of ['hunter', 'farmer']) {
+    for (const q of FRAMEWORK.questions[role]) {
+      items.push({ id:'Q'+String(iid++).padStart(3,'0'), aspect:q.aspect, text:q.text, tipe:'suara', durasi:120, ulang:2, status:'Aktif' });
+    }
+  }
+  const paket = ['hunter','farmer'].map((rk, i) => {
+    const r = FRAMEWORK.roles[rk];
+    return {
+      id:'P'+(i+1), nama:r.label+' v1',
+      status:'Published', locked:true, assigned:true, showResult:false,
+      items: r.aspects.map(code => {
+        const it = items.find(x => x.aspect===code && FRAMEWORK.questions[rk].some(q=>q.aspect===code&&q.text===x.text));
+        return { itemId:it.id, target:r.targets[code], bobot:r.weights[code] };
+      })
+    };
+  });
+  return { clusters, aspects, items, paket, seq:{ item:iid, paket:3, cluster:3 } };
+}
+
+function load() {
+  try { DB = JSON.parse(localStorage.getItem(LS_KEY)) || seed(); }
+  catch { DB = seed(); }
+  // Migration: add clusters if old DB doesn't have them
+  if (!DB.clusters) {
+    DB.clusters = [
+      { id:'CL1', nama:'Soft Skills',      warna:'#3b82f6', desc:'' },
+      { id:'CL2', nama:'Technical Skills', warna:'#10b981', desc:'' },
+    ];
+    for (const a of DB.aspects) {
+      if (!a.clusterId) a.clusterId = a.category === 'soft' ? 'CL1' : 'CL2';
+    }
+  }
+  if (!DB.seq.cluster) DB.seq.cluster = DB.clusters.length + 1;
+}
+
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(DB)); renderAll(); }
+
+/* ── Helpers ── */
+const $ = id => document.getElementById(id);
+const esc = s => (s||'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const getAspek = c => DB.aspects.find(a=>a.code===c);
+const getItem  = id => DB.items.find(i=>i.id===id);
+const getCluster = id => DB.clusters.find(c=>c.id===id);
+
+function statusTag(s) {
+  const map = { Draft:'sb-draft', Aktif:'sb-aktif', Published:'sb-published', Archived:'sb-archived' };
+  return `<span class="status-badge ${map[s]||'sb-draft'}">${esc(s)}</span>`;
+}
+function toast(msg) {
+  const t=$('toast'); t.textContent=msg; t.classList.add('show');
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),2400);
+}
+function closeModal(id) { $(id).classList.remove('open'); speechSynthesis.cancel(); }
+
+function countClusterActiveItems(clusterId) {
+  const codes = DB.aspects.filter(a=>a.clusterId===clusterId).map(a=>a.code);
+  return DB.items.filter(i=>codes.includes(i.aspect)&&i.status!=='Archived').length;
+}
+
+const aspekDipakaiPaketAktif = code => DB.paket.some(p=>p.status!=='Archived'&&p.items.some(pi=>getItem(pi.itemId)?.aspect===code));
+const itemDipakaiPaket = id => DB.paket.some(p=>p.status!=='Archived'&&p.items.some(pi=>pi.itemId===id));
+
+/* ── Sidebar ── */
+function toggleSidebar() {
+  $('sidebar').classList.toggle('collapsed');
+}
+function toggleSection(id) {
+  const el=$(id), chev=$('chev-'+id); if(!el) return;
+  const isHidden=el.style.display==='none';
+  el.style.display=isHidden?'':'none';
+  if(chev) chev.classList.toggle('open',isHidden);
+}
+const PAGE_META = {
+  bank:  { title:'Bank Item',        sub:'Kelola kompetensi hierarkis: Cluster → Aspek → Item Pertanyaan' },
+  paket: { title:'Paket Interview',  sub:'Kumpulkan item ke dalam paket yang siap di-assign ke kandidat' },
+};
+function switchTab(tab) {
+  ['bank','paket'].forEach(t=>{const s=$('tab-'+t);if(s)s.hidden=(t!==tab);});
+  ['nav-bank','nav-paket'].forEach(id=>{
+    const btn=$(id); if(!btn) return;
+    btn.classList.toggle('active-section', id==='nav-'+tab);
+  });
+  const meta=PAGE_META[tab];
+  if(meta){$('page-title').textContent=meta.title;$('page-sub').textContent=meta.sub;}
+}
+
+/* ── RENDER: BANK ── */
+let selectedClusterId = 'all';
+
+function selectCluster(id) { selectedClusterId=id; renderBank(); }
+
+function renderBank() {
+  const filteredClusters = selectedClusterId==='all' ? DB.clusters : DB.clusters.filter(c=>c.id===selectedClusterId);
+
+  // ── Left panel ──
+  const totalActive = DB.items.filter(i=>i.status!=='Archived').length;
+  let navHtml = `<button class="sp-cluster-btn ${selectedClusterId==='all'?'active':''}" onclick="selectCluster('all')"
+    style="${selectedClusterId==='all'?'border-left-color:#64748b;background:#f8fafc;color:#334155;':''}">
+    <span style="display:flex;align-items:center;gap:6px;">
+      <span class="sp-cluster-dot" style="background:#94a3b8;"></span><span>All Clusters</span>
+    </span>
+    <span class="sp-cluster-count">${totalActive}</span>
+  </button>`;
+  for (const cl of DB.clusters) {
+    const cnt = countClusterActiveItems(cl.id);
+    const th  = clusterTheme(cl.warna);
+    const act = selectedClusterId===cl.id;
+    navHtml += `<button class="sp-cluster-btn ${act?'active':''}" onclick="selectCluster('${cl.id}')"
+      style="${act?`border-left-color:${cl.warna};background:${th.bg};color:${th.text};`:''}">
+      <span style="display:flex;align-items:center;gap:6px;flex:1;min-width:0;overflow:hidden;">
+        <span class="sp-cluster-dot" style="background:${cl.warna};flex-shrink:0;"></span>
+        <span style="overflow:hidden;text-overflow:ellipsis;">${esc(cl.nama)}</span>
+      </span>
+      <span class="cl-acts" onclick="event.stopPropagation()">
+        <span class="cl-act-btn" onclick="openClusterModal('${cl.id}')" title="Edit cluster">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+        </span>
+        <span class="cl-act-btn danger" onclick="deleteCluster('${cl.id}')" title="Hapus cluster">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </span>
+      </span>
+      <span class="sp-cluster-count" style="${act?`background:${th.border};color:${th.text};`:''}">${cnt}</span>
+    </button>`;
+  }
+  $('sp-cluster-list').innerHTML = navHtml;
+
+  // ── Title ──
+  if (selectedClusterId==='all') {
+    $('sp-bank-title').textContent='All Clusters';
+  } else {
+    const cl=getCluster(selectedClusterId);
+    $('sp-bank-title').textContent=cl?cl.nama:'';
+  }
+
+  // ── Hierarchical table ──
+  const rows = [];
+  let totalVisible = 0;
+
+  for (const cl of filteredClusters) {
+    const th = clusterTheme(cl.warna);
+    const clAspects = DB.aspects.filter(a=>a.clusterId===cl.id&&a.status!=='Archived');
+
+    // Calculate cluster rowspan
+    let clRowspan = 0;
+    for (const a of clAspects) {
+      const items = DB.items.filter(i=>i.aspect===a.code&&i.status!=='Archived');
+      clRowspan += Math.max(1, items.length);
+    }
+    if (clAspects.length===0) clRowspan=1;
+
+    const canDeleteCluster = clAspects.length===0;
+    const clusterTdHtml = `<td class="cluster-td" rowspan="${clRowspan}" style="border-left:3px solid ${cl.warna};background:${th.bg};">
+      <div class="cluster-td-inner">
+        <div class="cluster-td-name">
+          <span style="width:9px;height:9px;border-radius:50%;background:${cl.warna};flex-shrink:0;display:inline-block;"></span>
+          <span style="color:${th.text};font-size:12px;">${esc(cl.nama)}</span>
+        </div>
+      </div>
+    </td>`;
+
+    if (clAspects.length===0) {
+      rows.push(`<tr class="bank-row">
+        ${clusterTdHtml}
+        <td colspan="5" class="empty-td">Belum ada aspek — <span class="link-act" onclick="openAspekModal(null,'${cl.id}')">+ Tambah Aspek</span></td>
+      </tr>`);
+      continue;
+    }
+
+    let firstInCluster=true;
+    for (const a of clAspects) {
+      const items = DB.items.filter(i=>i.aspect===a.code&&i.status!=='Archived');
+      const aspRowspan = Math.max(1, items.length);
+      const rubrikOk = a.levels.filter(l=>l&&l.trim()).length===5;
+
+      const aspekTdHtml = `<td class="aspek-td" rowspan="${aspRowspan}">
+        <div class="aspek-td-code">${esc(a.code)}</div>
+        <div class="aspek-td-name">${esc(a.name)}</div>
+        ${a.desc?`<div class="aspek-td-desc">${esc(a.desc)}</div>`:''}
+        <div>
+          ${rubrikOk
+            ? '<span class="status-badge sb-aktif" style="font-size:10px;padding:1px 7px;">Rubrik ✓</span>'
+            : '<span class="status-badge sb-error" style="font-size:10px;padding:1px 7px;">Rubrik —</span>'}
+        </div>
+      </td>`;
+
+      if (items.length===0) {
+        rows.push(`<tr class="bank-row">
+          ${firstInCluster?clusterTdHtml:''}
+          ${aspekTdHtml}
+          <td colspan="3" class="empty-td">Belum ada item — <span class="link-act" onclick="openItemModal(null,'${a.code}')">+ Tambah Item</span></td>
+        </tr>`);
+        firstInCluster=false;
+        continue;
+      }
+
+      let firstInAspek=true;
+      for (const item of items) {
+        rows.push(`<tr class="bank-row">
+          ${firstInCluster?clusterTdHtml:''}
+          ${firstInAspek?aspekTdHtml:''}
+          <td class="item-td"><div class="item-text">${esc(item.text)}</div></td>
+          <td class="prop-td"><span class="tipe-pill">suara</span></td>
+          <td class="prop-td">
+            <label class="toggle-switch" title="${item.status==='Aktif'?'Aktif':'Draft'}">
+              <input type="checkbox" ${item.status==='Aktif'?'checked':''} onchange="toggleItemStatus('${item.id}',this.checked)">
+              <span class="toggle-track"></span>
+            </label>
+          </td>
+          <td class="prop-td wide" onclick="event.stopPropagation()">
+            <div class="acts" style="justify-content:center;">
+              <button class="icon-btn" onclick="openItemModal('${item.id}')" title="Edit"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button>
+              <button class="icon-btn danger" onclick="deleteItem('${item.id}')" title="Hapus"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg></button>
+            </div>
+          </td>
+        </tr>`);
+        firstInCluster=false;
+        firstInAspek=false;
+        totalVisible++;
+      }
+    }
+  }
+
+  $('tb-bank').innerHTML = rows.join('') || `<tr><td colspan="8" class="empty">Belum ada data.</td></tr>`;
+  $('sp-bank-count').textContent = `${totalVisible} item`;
+  $('cnt-bank').textContent = totalActive;
+}
+
+/* ── Toggle item status ── */
+function toggleItemStatus(id, checked) {
+  const i=getItem(id); if(!i) return;
+  if (!checked && itemDipakaiPaket(id)) {
+    if (!confirm('Item ini dipakai paket aktif. Non-aktifkan akan membuat paket tersebut tidak valid untuk assignment baru. Lanjutkan?')) {
+      renderBank(); return;
+    }
+  }
+  i.status = checked ? 'Aktif' : 'Draft';
+  save(); toast(`${id} → ${i.status}`);
+}
+
+function deleteItem(id) {
+  const i=getItem(id); if(!i) return;
+  if (itemDipakaiPaket(id)) return toast('Item dipakai paket aktif — hapus dari paket dulu');
+  if (!confirm(`Hapus pertanyaan ini permanen?\n\n"${i.text.slice(0,80)}…"`)) return;
+  DB.items = DB.items.filter(x=>x.id!==id);
+  save(); toast(`${id} dihapus`);
+}
+
+/* ── Cluster modal ── */
+let editClusterId = null;
+let selectedColor = '#3b82f6';
+
+function openClusterModal(id) {
+  editClusterId = id || null;
+  const cl = id ? getCluster(id) : null;
+  $('m-cluster-title').textContent = cl ? `Edit Cluster — ${cl.nama}` : 'Cluster Baru';
+  $('cl-nama').value  = cl ? cl.nama  : '';
+  $('cl-desc').value  = cl ? cl.desc  : '';
+  selectedColor = cl ? cl.warna : '#3b82f6';
+  $('cl-warna').value = selectedColor;
+  renderColorPicker();
+  $('m-cluster').classList.add('open');
+}
+
+function renderColorPicker() {
+  $('cl-color-picker').innerHTML = PRESET_COLORS.map(p =>
+    `<span class="color-dot-opt ${p.warna===selectedColor?'selected':''}"
+      style="background:${p.warna};"
+      onclick="pickColor('${p.warna}')"></span>`
+  ).join('');
+}
+
+function pickColor(warna) {
+  selectedColor = warna;
+  $('cl-warna').value = warna;
+  renderColorPicker();
+}
+
+function saveCluster() {
+  const nama = $('cl-nama').value.trim();
+  if (!nama) return toast('Nama cluster wajib diisi');
+  const warna = $('cl-warna').value || '#3b82f6';
+  const desc  = $('cl-desc').value.trim();
+  if (editClusterId) {
+    const cl = getCluster(editClusterId);
+    Object.assign(cl, { nama, warna, desc });
+  } else {
+    DB.clusters.push({ id:'CL'+DB.seq.cluster++, nama, warna, desc });
+  }
+  closeModal('m-cluster'); save(); toast('Cluster tersimpan');
+}
+
+function deleteCluster(id) {
+  const cl = getCluster(id);
+  const hasAspek = DB.aspects.some(a=>a.clusterId===id);
+  if (hasAspek) return toast(`Tidak bisa hapus "${cl.nama}" — masih ada aspek di dalamnya`);
+  if (!confirm(`Hapus cluster "${cl.nama}" permanen?`)) return;
+  DB.clusters = DB.clusters.filter(c=>c.id!==id);
+  if (selectedClusterId===id) selectedClusterId='all';
+  save(); toast(`Cluster "${cl.nama}" dihapus`);
+}
+
+/* ── Aspek modal ── */
+let editAspekCode = null;
+
+function openAspekModal(code, presetClusterId) {
+  editAspekCode = code || null;
+  const a = code ? getAspek(code) : null;
+  $('m-aspek-title').textContent = a ? `Edit Aspek — ${a.name}` : 'Aspek Baru';
+  $('a-kode').value = a ? a.code : ''; $('a-kode').disabled = !!a;
+  $('a-nama').value = a ? a.name : '';
+  $('a-desc').value = a ? a.desc : '';
+  $('a-cluster').innerHTML = DB.clusters.map(cl=>
+    `<option value="${cl.id}">${esc(cl.nama)}</option>`).join('');
+  $('a-cluster').value = a ? a.clusterId : (presetClusterId || DB.clusters[0]?.id || '');
+  $('a-rubrik').innerHTML = LEVELS.map((lbl,i) =>
+    `<div class="rubrik-lvl"><span class="lvl-chip">L${i+1} ${lbl}</span>
+     <textarea rows="2" id="a-lvl-${i}" placeholder="Indikator perilaku level ${i+1}…">${a?esc(a.levels[i]):''}</textarea></div>`
+  ).join('');
+  $('m-aspek').classList.add('open');
+}
+
+function saveAspek() {
+  const code  = $('a-kode').value.trim().toUpperCase();
+  const nama  = $('a-nama').value.trim();
+  const clusterId = $('a-cluster').value;
+  const levels = LEVELS.map((_,i)=>$('a-lvl-'+i).value.trim());
+  if (!code||!nama) return toast('Kode dan nama wajib diisi');
+  if (!clusterId) return toast('Pilih cluster');
+  if (levels.some(l=>!l)) return toast('Rubrik 5 level wajib lengkap — ini dasar skoring AI');
+  if (!editAspekCode && getAspek(code)) return toast(`Kode ${code} sudah dipakai`);
+  if (editAspekCode) {
+    const a = getAspek(editAspekCode);
+    const dipakaiPublished = DB.paket.some(p=>p.status==='Published'&&p.items.some(pi=>getItem(pi.itemId)?.aspect===a.code));
+    if (dipakaiPublished && JSON.stringify(levels)!==JSON.stringify(a.levels)) {
+      if (!confirm('⚠️ Rubrik aspek ini dipakai paket Published. Perubahan rubrik sebaiknya lewat VERSI BARU paket. Tetap simpan?')) return;
+    }
+    Object.assign(a, { name:nama, clusterId, desc:$('a-desc').value.trim(), levels });
+  } else {
+    DB.aspects.push({ code, name:nama, clusterId, desc:$('a-desc').value.trim(), levels, status:'Aktif' });
+  }
+  closeModal('m-aspek'); save(); toast('Aspek tersimpan');
+}
+
+/* ── Item modal ── */
+let editItemId = null;
+
+function openItemModal(id, presetAspek) {
+  editItemId = id || null;
+  const i = id ? getItem(id) : null;
+  $('m-item-title').textContent = i ? `Edit Pertanyaan — ${i.id}` : 'Pertanyaan Baru';
+  $('i-aspek').innerHTML = DB.aspects.filter(a=>a.status==='Aktif'||(i&&a.code===i.aspect))
+    .map(a=>`<option value="${a.code}">${a.code} — ${esc(a.name)}</option>`).join('');
+  if (i) $('i-aspek').value = i.aspect;
+  else if (presetAspek) $('i-aspek').value = presetAspek;
+  $('i-text').value = i ? i.text : '';
+  $('i-save-btn').textContent = i ? 'Simpan' : 'Simpan sebagai Draft';
+  $('m-item').classList.add('open');
+}
+
+function saveItem() {
+  const text = $('i-text').value.trim();
+  if (!text) return toast('Teks pertanyaan wajib diisi');
+  const existing = editItemId ? getItem(editItemId) : null;
+  const data = { aspect:$('i-aspek').value, text,
+    tipe: existing?.tipe||'suara', durasi:existing?.durasi||120, ulang:existing?.ulang??2 };
+  if (editItemId) Object.assign(getItem(editItemId), data);
+  else DB.items.push({ id:'Q'+String(DB.seq.item++).padStart(3,'0'), ...data, status:'Draft' });
+  closeModal('m-item'); save(); toast('Pertanyaan tersimpan');
+}
+
+/* ── RENDER: PAKET ── */
+function renderPaket() {
+  const aktif = DB.paket.filter(p=>p.status!=='Archived').length;
+  $('paket-count-label').textContent = `Paket Interview · ${aktif} aktif`;
+  $('grid-paket').innerHTML = DB.paket.map(p=>{
+    const allAktif = p.items.every(pi=>getItem(pi.itemId)?.status==='Aktif');
+    const hasInactiveWarning = !allAktif && p.status!=='Archived';
+    return `<tr>
+      <td style="vertical-align:middle;">
+        <div style="font-weight:600;font-size:13px;">${esc(p.nama)}</div>
+        ${hasInactiveWarning?`<div style="font-size:11px;color:#dc2626;margin-top:3px;">⚠️ Ada item non-Aktif</div>`:''}
+      </td>
+      <td style="text-align:center;vertical-align:middle;font-size:13px;font-weight:600;">${p.items.length}</td>
+      <td style="vertical-align:middle;">${statusTag(p.status)}</td>
+      <td style="vertical-align:middle;">
+        <div class="acts" style="gap:4px;">
+          <button class="icon-btn" onclick="openPaketModal('${p.id}')" title="${p.locked?'Lihat':'Edit'}">
+            ${p.locked
+              ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>`
+              : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`}
+          </button>
+          <button class="icon-btn" onclick="dupPaket('${p.id}')" title="Duplikasi versi baru">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+          ${p.status==='Draft'?`<button class="icon-btn" onclick="publishPaket('${p.id}')" title="Publish" style="color:#16a34a;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+          </button>`:''}
+          ${p.status==='Published'?`<button class="icon-btn danger" onclick="setPaketStatus('${p.id}','Archived')" title="Archive">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 8v13H3V8"/><path d="M1 3h22v5H1z"/><path d="M10 12h4"/></svg>
+          </button>`:''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('')||`<tr><td colspan="4" class="empty">Belum ada paket.</td></tr>`;
+  $('cnt-paket').textContent = aktif;
+}
+
+function publishPaket(id) {
+  const p=DB.paket.find(x=>x.id===id);
+  if (!p.items.length) return toast('Paket kosong — tambah item dulu');
+  if (!p.items.every(pi=>getItem(pi.itemId)?.status==='Aktif')) return toast('Guardrail: semua item harus Aktif sebelum publish');
+  p.status='Published'; save(); toast(`${p.nama} → Published`);
+}
+function setPaketStatus(id, st) { const p=DB.paket.find(x=>x.id===id); p.status=st; save(); toast(`${p.nama} → ${st}`); }
+function dupPaket(id) {
+  const p=DB.paket.find(x=>x.id===id);
+  const base=p.nama.replace(/\s+v\d+$/i,'');
+  const n=DB.paket.filter(x=>x.nama.replace(/\s+v\d+$/i,'')===base).length+1;
+  const np={...JSON.parse(JSON.stringify(p)),id:'P'+DB.seq.paket++,nama:`${base} v${n}`,status:'Draft',locked:false,assigned:false};
+  delete np.versi; delete np.desc;
+  DB.paket.push(np); save(); toast(`Dibuat ${np.nama} (Draft)`); openPaketModal(np.id);
+}
+
+let editPaketId=null, paketDraft=null;
+function openPaketModal(id) {
+  editPaketId=id||null;
+  const p=id?DB.paket.find(x=>x.id===id):null;
+  paketDraft=p?JSON.parse(JSON.stringify(p.items)):[];
+  $('m-paket-title').textContent=p?(p.locked?`Paket — ${p.nama} (terkunci)`:`Edit Paket — ${p.nama}`):'Paket Baru';
+  $('p-lockwarn').style.display=p&&p.locked?'block':'none';
+  $('p-nama').value=p?p.nama:'';
+  $('p-showresult').checked=p?p.showResult:false;
+  const locked=p&&p.locked;
+  ['p-nama','p-showresult','p-add-item'].forEach(x=>{const el=$(x);if(el)el.disabled=locked;});
+  $('p-save-btn').style.display=locked?'none':'';
+  $('p-add-item').innerHTML='<option value="">Pilih item Aktif untuk ditambahkan…</option>'+
+    DB.items.filter(i=>i.status==='Aktif').map(i=>`<option value="${i.id}">${i.aspect} · ${esc(i.text.slice(0,80))}…</option>`).join('');
+  renderPaketItems(locked);
+  $('m-paket').classList.add('open');
+}
+function renderPaketItems(locked) {
+  $('p-items').innerHTML=paketDraft.map((pi,idx)=>{
+    const it=getItem(pi.itemId); if(!it) return '';
+    const a=getAspek(it.aspect);
+    return `<div class="item-row">
+      <div class="ord-btns">${locked?'':`<button onclick="mvItem(${idx},-1)">▲</button><button onclick="mvItem(${idx},1)">▼</button>`}</div>
+      <div><b>${idx+1}. ${esc(it.aspect)} — ${esc(a?a.name:'?')}</b>
+        ${it.status!=='Aktif'?`<span class="status-badge" style="background:#fee2e2;color:#991b1b;margin-left:4px;">${esc(it.status)}</span>`:''}
+        <div class="q-preview">${esc(it.text.slice(0,110))}…</div></div>
+      <select ${locked?'disabled':''} onchange="paketDraft[${idx}].target=+this.value">
+        ${[1,2,3,4,5].map(l=>`<option value="${l}" ${pi.target===l?'selected':''}>L${l} ${LEVELS[l-1]}</option>`).join('')}</select>
+      <select ${locked?'disabled':''} onchange="paketDraft[${idx}].bobot=this.value">
+        ${['Kritis','Tinggi','Sedang'].map(b=>`<option ${pi.bobot===b?'selected':''}>${b}</option>`).join('')}</select>
+      ${locked?'<span></span>':`<button class="rm-item" onclick="paketDraft.splice(${idx},1);renderPaketItems(false)">✕</button>`}
+    </div>`;
+  }).join('')||'<div class="empty" style="padding:16px;">Belum ada item dalam paket.</div>';
+}
+function mvItem(i,d){const j=i+d;if(j<0||j>=paketDraft.length)return;[paketDraft[i],paketDraft[j]]=[paketDraft[j],paketDraft[i]];renderPaketItems(false);}
+function paketAddItem(){const id=$('p-add-item').value;if(!id)return;if(paketDraft.some(pi=>pi.itemId===id))return toast('Item sudah ada di paket');paketDraft.push({itemId:id,target:3,bobot:'Sedang'});renderPaketItems(false);}
+function savePaket(){
+  const nama=$('p-nama').value.trim(); if(!nama)return toast('Nama paket wajib diisi');
+  const data={nama,showResult:$('p-showresult').checked,items:paketDraft};
+  if(editPaketId) Object.assign(DB.paket.find(x=>x.id===editPaketId),data);
+  else DB.paket.push({id:'P'+DB.seq.paket++,status:'Draft',locked:false,assigned:false,...data});
+  closeModal('m-paket'); save(); toast('Paket tersimpan');
+}
+
+/* ── Boot ── */
+function renderAll() { renderBank(); renderPaket(); }
+document.querySelectorAll('.modal-back').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModal(m.id);}));
+load(); renderAll();
+if (location.hash === '#paket') switchTab('paket');
+</script>
+</body>
+</html>

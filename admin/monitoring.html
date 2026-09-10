@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monitoring — Admin · Talentlytica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../tokens.css">
+<style>
+  :root {
+    --nm-bg: #ffffff; --nm-fg: #0f172a; --nm-card: #ffffff;
+    --nm-border: #e2e8f0; --nm-muted: #f8fafc; --nm-muted-fg: #64748b;
+    --nm-input: #e2e8f0; --nm-radius: 0.625rem;
+  }
+  html, body { height: 100%; margin: 0; }
+  body { background: #fff; font-family: 'Inter',sans-serif; display: flex; height: 100vh; overflow: hidden; }
+
+  .sidebar { width: 240px; flex-shrink: 0; background: #0f172a; color: #fff; display: flex; flex-direction: column; height: 100vh; overflow: hidden; transition: width .25s; }
+  .sidebar.collapsed { width: 64px; }
+  .sb-header { height: 60px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; border-bottom: 1px solid rgba(255,255,255,.1); flex-shrink: 0; }
+  .sb-logo { display: flex; align-items: center; gap: 10px; }
+  .sb-logo-icon { width: 32px; height: 32px; flex-shrink: 0; border-radius: 8px; background: #3b82f6; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; color: #fff; }
+  .sb-logo-text .t1 { font-size: 12px; font-weight: 700; line-height: 1.2; white-space: nowrap; }
+  .sb-logo-text .t2 { font-size: 10px; color: #94a3b8; white-space: nowrap; }
+  .sb-collapse-btn { width: 28px; height: 28px; border-radius: 6px; border: none; background: transparent; color: #94a3b8; cursor: pointer; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 14px; transition: background .15s, color .15s; }
+  .sb-collapse-btn:hover { background: #1e293b; color: #fff; }
+  .sb-nav { flex: 1; overflow-y: auto; padding: 8px 0; }
+  .sb-nav::-webkit-scrollbar { width: 4px; }
+  .sb-nav::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+  .sb-section { border-top: 1px solid rgba(255,255,255,.06); padding-top: 6px; margin-top: 4px; }
+  .sb-section:first-child { border-top: none; margin-top: 0; }
+  .sb-section-title { padding: 4px 12px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .07em; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: color .15s; }
+  .sb-section-title.dim-sect { color: #334155; }
+  .sb-section-title.active-sect { color: #60a5fa; }
+  .sb-section-dot { width: 6px; height: 6px; border-radius: 50%; background: #3b82f6; display: inline-block; margin-right: 5px; }
+  .sb-chevron { font-size: 10px; transition: transform .2s; }
+  .sb-chevron.open { transform: rotate(90deg); }
+  .sb-items { overflow: hidden; }
+  .sb-item { display: flex; align-items: center; gap: 10px; padding: 7px 12px 7px 14px; font-size: 12px; font-weight: 500; cursor: pointer; border-radius: 6px; margin: 1px 6px; border-left: 2px solid transparent; transition: background .12s, color .12s; text-decoration: none; white-space: nowrap; overflow: hidden; color: #94a3b8; background: none; border-top: none; border-right: none; border-bottom: none; font-family: inherit; width: calc(100% - 12px); text-align: left; }
+  .sb-item .sb-icon { font-size: 15px; flex-shrink: 0; opacity: .7; }
+  .sb-item.active-section { background: #3b82f6; color: #fff; border-left-color: transparent; }
+  .sb-item.active-section .sb-icon { opacity: 1; }
+  .sb-item.dim-link { color: #334155; cursor: default; }
+  .sb-item:not(.dim-link):not(.active-section):hover { background: #1e293b; color: #e2e8f0; }
+  .sidebar.collapsed .sb-logo-text, .sidebar.collapsed .sb-section-title span:not(.sb-section-dot),
+  .sidebar.collapsed .sb-item span, .sidebar.collapsed .sb-chevron { display: none; }
+  .sidebar.collapsed .sb-item { justify-content: center; padding: 8px; border-left: none; margin: 1px 4px; }
+  .sidebar.collapsed .sb-section-title { justify-content: center; padding: 6px; }
+  .sb-footer { padding: 10px 12px; border-top: 1px solid rgba(255,255,255,.1); font-size: 10px; color: #334155; flex-shrink: 0; }
+
+  .main-area { flex: 1; overflow: auto; display: flex; flex-direction: column; min-width: 0; }
+  .page-head { padding: 28px 28px 0; }
+  .page-head-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
+  .page-title { font-size: 22px; font-weight: 700; color: var(--nm-fg); }
+  .page-sub { font-size: 13px; color: var(--nm-muted-fg); margin-top: 4px; }
+  main { padding: 0 28px 64px; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 16px 0 0; }
+  @media (max-width: 900px) { .kpi-grid { grid-template-columns: repeat(2, 1fr); } }
+  .kpi-card { border-radius: var(--nm-radius); padding: 18px 18px 16px; display: flex; align-items: flex-start; justify-content: space-between; border: 1px solid transparent; }
+  .kpi-inner p:first-child { font-size: 12px; font-weight: 600; opacity: .75; }
+  .kpi-inner p:last-child  { font-size: 28px; font-weight: 700; margin-top: 6px; line-height: 1; }
+  .kpi-card svg { width: 28px; height: 28px; flex-shrink: 0; opacity: .5; margin-top: 4px; }
+  .kpi-blue  { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+  .kpi-green { background: #f0fdf4; color: #14532d; border-color: #bbf7d0; }
+  .kpi-slate { background: #f8fafc; color: #334155; border-color: #e2e8f0; }
+  .kpi-red   { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+
+  .filter-bar { background: #fff; border: 1px solid var(--nm-border); border-radius: var(--nm-radius); padding: 14px 16px; margin-top: 16px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+  .filter-group { display: flex; flex-direction: column; gap: 5px; }
+  .filter-label { font-size: 11px; font-weight: 500; color: var(--nm-muted-fg); }
+  .toggle-group { display: flex; gap: 0; border: 1px solid var(--nm-border); border-radius: 6px; overflow: hidden; }
+  .toggle-btn { padding: 5px 14px; font-size: 13px; font-weight: 500; cursor: pointer; background: #fff; color: #334155; border: none; font-family: inherit; transition: background .15s, color .15s; }
+  .toggle-btn.active { background: #0f172a; color: #fff; }
+  .toggle-btn:hover:not(.active) { background: #f1f5f9; }
+  .search-wrap { position: relative; }
+  .search-wrap svg { position: absolute; left: 9px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; color: var(--nm-muted-fg); pointer-events: none; }
+  .search-wrap input { padding: 7px 10px 7px 28px; border-radius: 6px; border: 1px solid var(--nm-border); font-family: inherit; font-size: 13px; background: var(--nm-bg); color: var(--nm-fg); width: 200px; }
+  .search-wrap input:focus { outline: none; box-shadow: 0 0 0 2px #bfdbfe; }
+
+  .tbl-wrap { margin-top: 16px; border: 1px solid var(--nm-border); border-radius: var(--nm-radius); overflow: hidden; }
+  .tbl-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; border-bottom: 1px solid var(--nm-border); font-size: 12px; color: var(--nm-muted-fg); }
+  .tbl-toolbar select { border: 1px solid var(--nm-border); border-radius: 6px; padding: 3px 8px; font-family: inherit; font-size: 12px; background: #fff; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; padding: 10px 16px; font-size: 11px; font-weight: 500; color: var(--nm-muted-fg); border-bottom: 1px solid var(--nm-border); background: #f8fafc; white-space: nowrap; }
+  td { padding: 14px 16px; border-bottom: 1px solid var(--nm-border); vertical-align: middle; }
+  tr:last-child td { border-bottom: 0; }
+  tr.expand-trigger { cursor: pointer; transition: background .12s; }
+  tr.expand-trigger:hover { background: #f8fafc; }
+  .muted { color: var(--nm-muted-fg); }
+  .empty { text-align: center; color: var(--nm-muted-fg); padding: 48px; font-size: 13px; }
+
+  .status-badge { display: inline-flex; align-items: center; gap: 5px; border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 600; white-space: nowrap; border: 1px solid; }
+  .sb-active { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+  .sb-ended  { background: #f1f5f9; color: #64748b; border-color: #cbd5e1; }
+
+  /* progress bar */
+  .prog-bar { display: flex; align-items: center; gap: 8px; min-width: 140px; }
+  .prog-track { flex: 1; height: 6px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; }
+  .prog-fill { height: 100%; border-radius: 9999px; transition: width .3s; }
+  .prog-pct { font-size: 12px; color: var(--nm-muted-fg); width: 36px; text-align: right; flex-shrink: 0; }
+
+  .chevron { display: inline-flex; color: #94a3b8; transition: transform .2s; }
+  .chevron.open { transform: rotate(180deg); color: #3b82f6; }
+  .expand-row td { padding: 0; }
+  .expand-inner { max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+  .expand-inner.open { max-height: 800px; }
+  .expand-content { padding: 16px; background: #f8fafc; border-top: 1px solid var(--nm-border); }
+
+  /* candidate sub-table */
+  .sub-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .sub-table th { background: #f1f5f9; padding: 6px 12px; font-size: 11px; font-weight: 500; color: var(--nm-muted-fg); border-bottom: 1px solid var(--nm-border); }
+  .sub-table td { padding: 10px 12px; border-bottom: 1px solid var(--nm-border); }
+  .sub-table tr:last-child td { border-bottom: 0; }
+  .sub-status { display: inline-flex; align-items: center; gap: 4px; border-radius: 9999px; padding: 2px 8px; font-size: 10px; font-weight: 600; border: 1px solid; }
+  .ss-assigned   { background: #f1f5f9; color: #475569; border-color: #cbd5e1; }
+  .ss-invited    { background: #eff6ff; color: #1d4ed8; border-color: #bfdbfe; }
+  .ss-inprogress { background: #dbeafe; color: #1e40af; border-color: #93c5fd; }
+  .ss-completed  { background: #d1fae5; color: #065f46; border-color: #6ee7b7; }
+  .ss-expired    { background: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+  .ss-cancelled  { background: #f1f5f9; color: #94a3b8; border-color: #e2e8f0; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 7px; font-family: inherit; font-size: 13px; font-weight: 500; cursor: pointer; border: none; transition: background .15s; }
+  .btn-sm { padding: 5px 12px; font-size: 12px; }
+  .btn-primary { background: #0f172a; color: #fff; }
+  .btn-primary:hover { background: #1e293b; }
+  .btn-outline { background: #fff; color: var(--nm-fg); border: 1px solid var(--nm-border); }
+  .btn-outline:hover { background: #f8fafc; }
+
+  .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 64px 32px; border: 1px dashed var(--nm-border); border-radius: var(--nm-radius); margin-top: 16px; text-align: center; }
+  .empty-state-icon { font-size: 40px; }
+  .empty-state h2 { font-size: 16px; font-weight: 600; color: var(--nm-fg); margin: 0; }
+  .empty-state p { font-size: 13px; color: var(--nm-muted-fg); margin: 0; max-width: 320px; }
+
+  @media (max-width: 700px) {
+    .sidebar { width: 64px !important; }
+    .sidebar .sb-logo-text, .sidebar .sb-section-title span:not(.sb-section-dot),
+    .sidebar .sb-item span, .sidebar .sb-chevron { display: none !important; }
+    .sidebar .sb-item { justify-content: center; padding: 8px; border-left: none; margin: 1px 4px; }
+    .sidebar .sb-section-title { justify-content: center; padding: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar">
+  <div class="sb-header">
+    <div class="sb-logo">
+      <div class="sb-logo-icon">T</div>
+      <div class="sb-logo-text"><div class="t1">Talentlytica</div><div class="t2">Admin Panel</div></div>
+    </div>
+    <button class="sb-collapse-btn" onclick="toggleSidebar()">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">
+      <div class="sb-section-title active-sect" onclick="toggleSection('s-assess')">
+        <span><span class="sb-section-dot"></span>Assessment</span>
+        <span class="sb-chevron open" id="chev-s-assess">▶</span>
+      </div>
+      <div class="sb-items" id="s-assess">
+        <a class="sb-item" href="item-management.html">
+          <svg class="sb-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span>Item Management</span>
+        </a>
+        <a class="sb-item" href="item-management.html#paket">
+          <svg class="sb-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          <span>Paket Interview</span>
+        </a>
+        <a class="sb-item" href="assignment.html">
+          <svg class="sb-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span>Assignment</span>
+        </a>
+        <a class="sb-item active-section" href="monitoring.html">
+          <svg class="sb-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Monitoring</span>
+        </a>
+      </div>
+    </div>
+  </nav>
+  <div class="sb-footer">v0.4 · prototype</div>
+</aside>
+
+<div class="main-area">
+<div class="page-head">
+  <div class="page-head-row">
+    <div>
+      <div class="page-title">Monitoring</div>
+      <div class="page-sub">Pantau progres penyelesaian assessment per paket dan per kandidat</div>
+    </div>
+    <a href="assignment.html" class="btn btn-outline btn-sm" style="margin-top:4px;text-decoration:none;">+ Assign</a>
+  </div>
+</div>
+<main>
+  <div class="kpi-grid" id="mon-kpi" style="margin-top:16px;"></div>
+
+  <div class="filter-bar">
+    <div class="filter-group">
+      <span class="filter-label">Status Paket</span>
+      <div class="toggle-group">
+        <button class="toggle-btn active" data-filter="" onclick="setFilter(this)">Semua</button>
+        <button class="toggle-btn" data-filter="active" onclick="setFilter(this)">Ada Progress</button>
+        <button class="toggle-btn" data-filter="done" onclick="setFilter(this)">Selesai</button>
+      </div>
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Cari Paket</span>
+      <div class="search-wrap">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        <input type="search" id="f-q" placeholder="Nama paket…" oninput="renderMonitoring()">
+      </div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <div style="overflow-x:auto;">
+      <table>
+        <thead><tr>
+          <th style="width:40px;">#</th>
+          <th>Paket</th>
+          <th>Total Kandidat</th>
+          <th>Completed</th>
+          <th>In Progress</th>
+          <th>Progress Rata-rata</th>
+          <th style="width:32px;"></th>
+        </tr></thead>
+        <tbody id="tb-monitor"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+</div>
+
+<script src="../competency-data.js"></script>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+const LS_ITEM='admin_item_mgmt_v1';
+const LS_ASSIGN='admin_assignment_v1';
+let DB, ASSIGN_DB;
+
+function loadDB(){
+  try{DB=JSON.parse(localStorage.getItem(LS_ITEM));}catch{}
+  if(!DB){
+    const aspects=Object.entries(FRAMEWORK.aspects).map(([code,a])=>({code,name:a.name,category:a.category,desc:'',levels:[...a.levels],status:'Aktif'}));
+    let iid=1;const items=[];
+    for(const role of['hunter','farmer'])for(const q of FRAMEWORK.questions[role])items.push({id:'Q'+String(iid++).padStart(3,'0'),aspect:q.aspect,text:q.text,tipe:'suara',durasi:120,ulang:2,status:'Aktif'});
+    const paket=['hunter','farmer'].map((rk,i)=>{const r=FRAMEWORK.roles[rk];return{id:'P'+(i+1),nama:r.label+' v1',versi:1,desc:'',status:'Published',locked:true,assigned:true,showResult:false,items:r.aspects.map(code=>{const it=items.find(x=>x.aspect===code&&FRAMEWORK.questions[rk].some(q=>q.aspect===code&&q.text===x.text));return{itemId:it.id,target:r.targets[code],bobot:r.weights[code]};})};});
+    DB={aspects,items,paket,seq:{item:iid,paket:3}};
+  }
+}
+function loadAssign(){try{ASSIGN_DB=JSON.parse(localStorage.getItem(LS_ASSIGN))||{assignments:[],seq:1};}catch{ASSIGN_DB={assignments:[],seq:1};}}
+
+function fmtDate(s){if(!s)return'–';return new Date(s+'T00:00:00').toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'});}
+
+function toggleSidebar(){$('sidebar').classList.toggle('collapsed');}
+function toggleSection(id){const el=$(id),chev=$('chev-'+id);if(!el)return;const h=el.style.display==='none';el.style.display=h?'':'none';if(chev)chev.classList.toggle('open',h);}
+
+/* KPI */
+const KPI_ICONS={
+  paket:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6M9 12h6M9 15h4"/></svg>`,
+  peserta:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
+  done:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg>`,
+  progress:`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 15"/></svg>`,
+};
+function renderKPI(){
+  const all=ASSIGN_DB.assignments;
+  const paketAktif=new Set(all.map(a=>a.paketId));
+  const completed=all.filter(a=>a.status==='Completed').length;
+  const inprog=all.filter(a=>['Started','In Progress'].includes(a.status)).length;
+  const stats=[
+    {label:'Paket Aktif',n:paketAktif.size,color:'kpi-slate',icon:'paket'},
+    {label:'Total Peserta',n:all.length,color:'kpi-blue',icon:'peserta'},
+    {label:'Selesai',n:completed,color:'kpi-green',icon:'done'},
+    {label:'On Progress',n:inprog,color:'kpi-blue',icon:'progress'},
+  ];
+  $('mon-kpi').innerHTML=stats.map(s=>`<div class="kpi-card ${s.color}"><div class="kpi-inner"><p>${s.label}</p><p>${s.n}</p></div>${KPI_ICONS[s.icon]}</div>`).join('');
+}
+
+/* filter */
+let activeFilter='';
+function setFilter(btn){document.querySelectorAll('.toggle-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');activeFilter=btn.dataset.filter;renderMonitoring();}
+
+/* progress bar color */
+function progColor(pct){if(pct===0)return'#f87171';if(pct<50)return'#fbbf24';if(pct<75)return'#60a5fa';return'#34d399';}
+
+/* sub-status */
+function subStatus(s){const map={Assigned:'ss-assigned',Invited:'ss-invited',Started:'ss-inprogress','In Progress':'ss-inprogress',Completed:'ss-completed',Expired:'ss-expired',Cancelled:'ss-cancelled'};return`<span class="sub-status ${map[s]||'ss-assigned'}">${esc(s)}</span>`;}
+
+/* expanded rows */
+let expandedId=null;
+
+function renderMonitoring(){
+  const fq=($('f-q').value||'').toLowerCase();
+  // Group assignments by paket
+  const paketMap={};
+  ASSIGN_DB.assignments.forEach(a=>{
+    if(!paketMap[a.paketId])paketMap[a.paketId]=[];
+    paketMap[a.paketId].push(a);
+  });
+  // Build batch rows per paket
+  let rows=DB.paket.filter(p=>paketMap[p.id]&&paketMap[p.id].length>0);
+  if(fq)rows=rows.filter(p=>p.nama.toLowerCase().includes(fq));
+  if(activeFilter==='active')rows=rows.filter(p=>{const cands=paketMap[p.id]||[];return cands.some(a=>!['Completed','Expired','Cancelled'].includes(a.status));});
+  if(activeFilter==='done')rows=rows.filter(p=>{const cands=paketMap[p.id]||[];return cands.length>0&&cands.every(a=>a.status==='Completed');});
+
+  if(!rows.length&&!ASSIGN_DB.assignments.length){
+    $('tb-monitor').innerHTML=`<tr><td colspan="7" style="padding:0;"><div class="empty-state"><div class="empty-state-icon">📊</div><h2>Belum ada data monitoring</h2><p>Buat assignment terlebih dahulu untuk mulai memantau progres.</p><a href="assignment.html" class="btn btn-primary btn-sm" style="text-decoration:none;">+ Buat Assignment</a></div></td></tr>`;return;
+  }
+  if(!rows.length){$('tb-monitor').innerHTML=`<tr><td colspan="7" class="empty">Tidak ada paket ditemukan.</td></tr>`;return;}
+
+  $('tb-monitor').innerHTML=rows.map((p,i)=>{
+    const cands=paketMap[p.id]||[];
+    const total=cands.length;
+    const done=cands.filter(a=>a.status==='Completed').length;
+    const inprog=cands.filter(a=>['Started','In Progress'].includes(a.status)).length;
+    const pct=total?Math.round((done/total)*100):0;
+    const isExp=expandedId===p.id;
+    const subRows=cands.map(a=>`<tr><td style="padding:10px 12px;">${esc(a.nama)}<br><span style="font-size:11px;color:var(--nm-muted-fg);">${esc(a.email||a.wa||'–')}</span></td><td>${subStatus(a.status)}</td><td style="font-size:12px;color:var(--nm-muted-fg);">${fmtDate(a.deadline)}</td><td style="font-size:12px;color:var(--nm-muted-fg);">${fmtDate(a.updatedAt||a.createdAt)}</td></tr>`).join('');
+    return`<tr class="expand-trigger" onclick="toggleRow('${p.id}')">
+      <td class="muted">${i+1}</td>
+      <td><b>${esc(p.nama)}</b><br><span class="muted" style="font-size:11px;">v${p.versi}</span></td>
+      <td>${total}</td>
+      <td>${done} <span class="muted">(${pct}%)</span></td>
+      <td>${inprog}</td>
+      <td>
+        <div class="prog-bar">
+          <div class="prog-track"><div class="prog-fill" style="width:${pct}%;background:${progColor(pct)};"></div></div>
+          <span class="prog-pct">${pct}%</span>
+        </div>
+      </td>
+      <td><span class="chevron ${isExp?'open':''}"><svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor"><path fill-rule="evenodd" d="M4.22 6.22a.75.75 0 0 1 1.06 0L8 8.94l2.72-2.72a.75.75 0 1 1 1.06 1.06l-3.25 3.25a.75.75 0 0 1-1.06 0L4.22 7.28a.75.75 0 0 1 0-1.06Z" clip-rule="evenodd"/></svg></span></td>
+    </tr>
+    <tr class="expand-row"><td colspan="7"><div class="expand-inner ${isExp?'open':''}">
+      <div class="expand-content">
+        <table class="sub-table"><thead><tr><th>Kandidat</th><th>Status</th><th>Deadline</th><th>Update Terakhir</th></tr></thead>
+        <tbody>${subRows}</tbody></table>
+      </div>
+    </div></td></tr>`;
+  }).join('');
+}
+
+function toggleRow(id){expandedId=expandedId===id?null:id;renderMonitoring();}
+
+loadDB();loadAssign();renderKPI();renderMonitoring();
+</script>
+</body>
+</html>
