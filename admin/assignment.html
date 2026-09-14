@@ -268,34 +268,6 @@
       </div>
     </div>
 
-    <!-- ─── Asesor ─── -->
-    <div class="card">
-      <div class="card-title">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-        Asesor
-      </div>
-
-      <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:end;margin-bottom:12px;">
-        <div class="f-group" style="position:relative;">
-          <label class="f-label">Nama Asesor</label>
-          <input id="aNama" class="f-input" type="text" placeholder="Nama lengkap" autocomplete="off"
-            oninput="showAsesorDropdown()"
-            onfocus="showAsesorDropdown()"
-            onkeydown="handleAsesorKey(event)">
-          <div id="asesorDropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #e2e8f0;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:50;max-height:200px;overflow-y:auto;margin-top:2px;"></div>
-        </div>
-        <div class="f-group">
-          <label class="f-label">Email Asesor</label>
-          <input id="aEmail" class="f-input" type="email" placeholder="email@domain.com"
-            onkeydown="if(event.key==='Enter'){event.preventDefault();addAsesor();}">
-        </div>
-        <button class="btn-add-peserta" type="button" onclick="addAsesor()">+ Tambah</button>
-      </div>
-
-      <div id="asesorList" style="display:flex;flex-wrap:wrap;gap:8px;min-height:0;"></div>
-      <span class="f-hint" style="margin-top:8px;display:block;">Minimal 1 asesor wajib ditambahkan</span>
-    </div>
-
     <!-- ─── Input Peserta ─── -->
     <div class="card">
       <div class="card-title">
@@ -384,17 +356,13 @@
 <script>
 const LS_ITEM   = 'admin_item_mgmt_v1';
 const LS_ASSIGN = 'admin_assignment_v1';
-const LS_ASESOR = 'admin_asesor_v1';
-
 let peserta    = [];
-let asesorList = [];
 let selClusters = new Set();
 
 window.addEventListener('DOMContentLoaded', () => {
   buildTimeDropdowns();
   loadClusters();
   loadPakets();
-  renderAsesorHistory();
   document.getElementById('fPaket').addEventListener('change', onPaketChange);
 });
 
@@ -463,105 +431,6 @@ function clusterTheme(warna) {
   ];
   return presets.find(p => p.warna === warna) || {warna,bg:'#f1f5f9',border:'#e2e8f0',text:'#374151'};
 }
-
-function addAsesor(nama, email) {
-  if (!nama) nama  = document.getElementById('aNama').value.trim();
-  if (!email) email = document.getElementById('aEmail').value.trim().toLowerCase();
-  if (!nama)  return toast('Nama asesor tidak boleh kosong');
-  if (!email) return toast('Email asesor tidak boleh kosong');
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return toast('Format email asesor tidak valid');
-  if (asesorList.some(a => a.email === email)) return toast('Asesor sudah ditambahkan');
-  asesorList.push({nama, email});
-  saveAsesorHistory(nama, email);
-  document.getElementById('aNama').value = '';
-  document.getElementById('aEmail').value = '';
-  document.getElementById('aNama').focus();
-  renderAsesor();
-  renderAsesorHistory();
-}
-
-function removeAsesor(idx) {
-  asesorList.splice(idx, 1);
-  renderAsesor();
-  renderAsesorHistory();
-}
-
-function renderAsesor() {
-  const wrap = document.getElementById('asesorList');
-  if (!asesorList.length) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = asesorList.map((a, i) => `
-    <div style="display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 12px;background:#eff6ff;border:1.5px solid #93c5fd;border-radius:20px;font-size:12px;font-weight:500;color:#1d4ed8;">
-      ${escHtml(a.nama)}<span style="font-size:10px;color:#60a5fa;">${escHtml(a.email)}</span>
-      <button type="button" onclick="removeAsesor(${i})" style="background:none;border:none;cursor:pointer;padding:0 2px;color:#93c5fd;line-height:1;display:flex;align-items:center;">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-      </button>
-    </div>`).join('');
-}
-
-function saveAsesorHistory(nama, email) {
-  let hist = [];
-  try { hist = JSON.parse(localStorage.getItem(LS_ASESOR) || '[]'); } catch(e){}
-  hist = hist.filter(a => a.email !== email);
-  hist.unshift({nama, email});
-  if (hist.length > 50) hist = hist.slice(0, 50);
-  localStorage.setItem(LS_ASESOR, JSON.stringify(hist));
-}
-
-let _asesorDropIdx = -1;
-
-function showAsesorDropdown() {
-  const q = document.getElementById('aNama').value.trim().toLowerCase();
-  let hist = [];
-  try { hist = JSON.parse(localStorage.getItem(LS_ASESOR) || '[]'); } catch(e){}
-  const filtered = hist.filter(a =>
-    !asesorList.some(x => x.email === a.email) &&
-    (a.nama.toLowerCase().includes(q) || a.email.toLowerCase().includes(q))
-  );
-  const dd = document.getElementById('asesorDropdown');
-  if (!filtered.length) { dd.style.display = 'none'; return; }
-  _asesorDropIdx = -1;
-  dd.style.display = '';
-  dd.innerHTML = filtered.map((a, i) => `
-    <div data-i="${i}" data-nama="${escHtml(a.nama)}" data-email="${escHtml(a.email)}"
-      onmousedown="pickAsesor('${a.nama.replace(/'/g,"\\'")}','${a.email}')"
-      style="padding:9px 12px;cursor:pointer;border-bottom:1px solid #f1f5f9;font-size:12px;"
-      onmouseenter="highlightDrop(this)" onmouseleave="unhighlightDrop(this)">
-      <span style="font-weight:600;color:#0f172a;">${escHtml(a.nama)}</span>
-      <span style="color:#94a3b8;margin-left:6px;">${escHtml(a.email)}</span>
-    </div>`).join('');
-}
-
-function highlightDrop(el) { el.style.background = '#f1f5f9'; }
-function unhighlightDrop(el) { el.style.background = ''; }
-
-function hideAsesorDropdown() {
-  document.getElementById('asesorDropdown').style.display = 'none';
-  _asesorDropIdx = -1;
-}
-
-function pickAsesor(nama, email) {
-  document.getElementById('aNama').value = nama;
-  document.getElementById('aEmail').value = email;
-  hideAsesorDropdown();
-  addAsesor(nama, email);
-}
-
-function handleAsesorKey(e) {
-  const dd = document.getElementById('asesorDropdown');
-  const items = dd.querySelectorAll('[data-i]');
-  if (e.key === 'Enter') { e.preventDefault(); if (_asesorDropIdx >= 0 && items[_asesorDropIdx]) { const el = items[_asesorDropIdx]; pickAsesor(el.dataset.nama, el.dataset.email); } else addAsesor(); return; }
-  if (e.key === 'Escape') { hideAsesorDropdown(); return; }
-  if (!items.length) return;
-  if (e.key === 'ArrowDown') { e.preventDefault(); if (_asesorDropIdx > 0) unhighlightDrop(items[_asesorDropIdx]); _asesorDropIdx = Math.min(_asesorDropIdx + 1, items.length - 1); highlightDrop(items[_asesorDropIdx]); }
-  if (e.key === 'ArrowUp')   { e.preventDefault(); if (_asesorDropIdx >= 0) unhighlightDrop(items[_asesorDropIdx]); _asesorDropIdx = Math.max(_asesorDropIdx - 1, 0); highlightDrop(items[_asesorDropIdx]); }
-}
-
-/* close dropdown on outside click */
-document.addEventListener('click', e => {
-  if (!e.target.closest('#asesorDropdown') && e.target.id !== 'aNama') hideAsesorDropdown();
-});
-
-function renderAsesorHistory() { /* kept for resetForm compat — no-op now */ }
 
 function loadPakets() {
   let db = {};
@@ -713,7 +582,6 @@ function submitForm() {
   if (!tglSelesai) return toast('Tanggal Selesai wajib diisi');
   if (tglSelesai < tglMulai) return toast('Tanggal Selesai tidak boleh sebelum Tanggal Mulai');
   if (!paketId)    return toast('Pilih Paket Interview terlebih dahulu');
-  if (!asesorList.length) return toast('Tambahkan minimal 1 asesor');
   if (!peserta.length) return toast('Tambahkan minimal 1 peserta');
 
   const periodStart = `${tglMulai}T${jamMH}:${jamMM}:00`;
@@ -733,7 +601,7 @@ function submitForm() {
       deadline: periodEnd,
       subdomain,
       clusters: [...selClusters],
-      asesor: asesorList.map(a => ({nama:a.nama, email:a.email})),
+      asesor: [],
       nama: p.nama,
       email: p.email,
       wa: '',
@@ -764,13 +632,10 @@ function resetForm() {
   document.getElementById('fPaket').value = '';
   document.getElementById('paketHint').textContent = '';
   selClusters.clear();
-  asesorList = [];
   document.querySelectorAll('#clusterChips .chip.selected').forEach(c => {
     c.classList.remove('selected');
     c.style.boxShadow = '';
   });
-  renderAsesor();
-  renderAsesorHistory();
   resetUpload();
   toast('Form direset');
 }
