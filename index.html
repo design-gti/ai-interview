@@ -91,6 +91,24 @@
   @media (max-width: 520px) {
     .role-grid { grid-template-columns: 1fr; }
   }
+
+  .sample-card {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-xs);
+    padding: var(--sp-sm);
+    border: 1.5px solid var(--c-neutral-2);
+    border-radius: var(--r-lg);
+    background: var(--c-neutral-0);
+    text-decoration: none;
+    transition: border-color .15s, box-shadow .15s, transform .15s;
+    cursor: pointer;
+  }
+  .sample-card:hover {
+    border-color: var(--accent, var(--c-primary-5));
+    box-shadow: 0 4px 16px rgba(0,0,0,.08);
+    transform: translateY(-1px);
+  }
 </style>
 </head>
 <body>
@@ -115,7 +133,7 @@
         </svg>
       </div>
       <div class="role-name">Sales Hunter</div>
-      <div class="role-meta">9 aspek · ~20 menit · 9 pertanyaan</div>
+      <div class="role-meta">3 aspek · ~7 menit · 3 pertanyaan</div>
       <div class="role-desc">Fokus pada prospeksi, negosiasi, dan penetrasi segmen baru.</div>
       <div class="kritis-pills">
         <span class="kpill hunter">Persuasi</span>
@@ -133,7 +151,7 @@
         </svg>
       </div>
       <div class="role-name">Sales Farmer</div>
-      <div class="role-meta">9 aspek · ~20 menit · 9 pertanyaan</div>
+      <div class="role-meta">3 aspek · ~7 menit · 3 pertanyaan</div>
       <div class="role-desc">Fokus pada retensi akun, layanan, dan kemitraan jangka panjang.</div>
       <div class="kritis-pills">
         <span class="kpill farmer">Orientasi Melayani</span>
@@ -154,6 +172,35 @@
   <p style="margin-top:var(--sp-xl);font-size:var(--fs-xs);color:var(--c-neutral-5);text-align:center;max-width:480px;">
     Framework ini berstatus <strong>v0.1 — belum tervalidasi SME</strong>. Hasil asesmen adalah estimasi awal untuk pengembangan, bukan keputusan personalia.
   </p>
+
+  <div style="margin-top:var(--sp-xl);padding-top:var(--sp-lg);border-top:1px solid var(--c-neutral-2);width:100%;max-width:480px;">
+    <p style="font-size:var(--fs-xs);font-weight:var(--fw-semi);color:var(--c-neutral-5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:var(--sp-sm);text-align:center;">Contoh Laporan Hasil</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--sp-sm);">
+
+      <a href="samples/laporan-hasil-budi-santoso.pdf" target="_blank" class="sample-card" style="--accent:var(--c-primary-5);--accent-bg:var(--c-primary-1);">
+        <div style="width:36px;height:36px;border-radius:var(--r-md);background:var(--c-primary-1);display:flex;align-items:center;justify-content:center;margin-bottom:var(--sp-xs);flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-primary-5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="4.22" y1="4.22" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.78" y2="19.78"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="4.22" y1="19.78" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.78" y2="4.22"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:var(--fs-sm);font-weight:var(--fw-semi);color:var(--c-neutral-8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Budi Santoso</div>
+          <div style="font-size:var(--fs-xs);color:var(--c-primary-5);font-weight:var(--fw-medium);margin-top:2px;">Sales Hunter</div>
+        </div>
+        <svg style="flex-shrink:0;color:var(--c-neutral-4);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+
+      <a href="samples/laporan-hasil-siti-rahayu.pdf" target="_blank" class="sample-card" style="--accent:var(--c-success-5);--accent-bg:var(--c-success-0);">
+        <div style="width:36px;height:36px;border-radius:var(--r-md);background:var(--c-success-0);display:flex;align-items:center;justify-content:center;margin-bottom:var(--sp-xs);flex-shrink:0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--c-success-5)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22V12"/><path d="M5 3v4c0 3.31 2.69 6 6 6h.01C14.31 13 17 10.31 17 7V3"/><path d="M5 7h12"/></svg>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:var(--fs-sm);font-weight:var(--fw-semi);color:var(--c-neutral-8);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Siti Rahayu</div>
+          <div style="font-size:var(--fs-xs);color:var(--c-success-5);font-weight:var(--fw-medium);margin-top:2px;">Sales Farmer</div>
+        </div>
+        <svg style="flex-shrink:0;color:var(--c-neutral-4);" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      </a>
+
+    </div>
+  </div>
 </div>
 
 <script>

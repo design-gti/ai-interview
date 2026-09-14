@@ -216,41 +216,29 @@ const FRAMEWORK = {
   roles: {
     hunter: {
       label: 'Sales Hunter',
-      aspects: ['PS','PR','IN','NG','AL','OA','SM','PT','ST'],
-      targets: { PS:5, PR:5, IN:5, NG:4, AL:4, OA:4, SM:4, PT:4, ST:4 },
-      weights: { PS:'Kritis', PR:'Kritis', IN:'Kritis', NG:'Tinggi', AL:'Tinggi', OA:'Tinggi', SM:'Tinggi', PT:'Tinggi', ST:'Tinggi' }
+      aspects: ['PS','PR','IN'],
+      targets: { PS:5, PR:5, IN:5 },
+      weights: { PS:'Kritis', PR:'Kritis', IN:'Kritis' }
     },
     farmer: {
       label: 'Sales Farmer',
-      aspects: ['SO','DP','PT','CS','AL','SP','MO','SE','CO'],
-      targets: { SO:5, DP:5, PT:5, CS:5, AL:4, SP:4, MO:4, SE:4, CO:4 },
-      weights: { SO:'Kritis', DP:'Kritis', PT:'Kritis', CS:'Kritis', AL:'Tinggi', SP:'Tinggi', MO:'Tinggi', SE:'Tinggi', CO:'Tinggi' }
+      aspects: ['SO','DP','PT'],
+      targets: { SO:5, DP:5, PT:5 },
+      weights: { SO:'Kritis', DP:'Kritis', PT:'Kritis' }
     }
   },
 
-  /* ── Pertanyaan behavioral (9 per role, urut bobot Kritis dulu) ── */
+  /* ── Pertanyaan behavioral (3 per role, aspek Kritis) ── */
   questions: {
     hunter: [
       { aspect: 'PS', text: 'Ceritakan situasi di mana Anda berhasil membentuk cara prospek mengevaluasi solusi sejak awal — sehingga kriteria mereka selaras dengan kekuatan produk Anda. Apa yang Anda lakukan dan bagaimana hasilnya?' },
       { aspect: 'PR', text: 'Ceritakan proses penjualan terpanjang yang pernah Anda jalani. Bagaimana Anda menjaga momentum selama lebih dari satu tahun, dan apa hasilnya?' },
-      { aspect: 'IN', text: 'Ceritakan satu inisiatif yang Anda ambil sendiri tanpa diminta — misalnya membuka kanal atau segmen baru. Apa yang mendorong Anda melakukannya dan apa yang terjadi?' },
-      { aspect: 'NG', text: 'Ceritakan negosiasi paling menantang yang pernah Anda tangani. Bagaimana Anda menyusun paket akhir yang menguntungkan kedua pihak?' },
-      { aspect: 'AL', text: 'Ceritakan percakapan dengan klien di mana Anda menangkap kebutuhan yang tidak pernah mereka ucapkan secara langsung. Apa sinyal yang Anda perhatikan, dan apa yang kemudian berubah?' },
-      { aspect: 'OA', text: 'Berikan contoh konkret saat Anda mengidentifikasi kebutuhan klien yang bahkan mereka sendiri belum sadari. Bagaimana Anda menemukannya dan bagaimana Anda membuktikannya kepada mereka?' },
-      { aspect: 'SM', text: 'Ceritakan bagaimana Anda merancang pendekatan untuk memasuki segmen pasar yang belum pernah digarap tim Anda. Apa yang Anda pelajari dan apa hasilnya?' },
-      { aspect: 'PT', text: 'Pernahkah ada klien yang mengajak Anda berdiskusi sebelum kebutuhan resmi mereka dirumuskan — sebelum ada RFP atau brief formal? Ceritakan konteksnya dan peran Anda.' },
-      { aspect: 'ST', text: 'Ceritakan satu momen ketika kesepakatan besar batal mendadak atau target terasa mustahil dicapai. Bagaimana Anda merespons dan apa yang Anda lakukan selanjutnya?' }
+      { aspect: 'IN', text: 'Ceritakan satu inisiatif yang Anda ambil sendiri tanpa diminta — misalnya membuka kanal atau segmen baru. Apa yang mendorong Anda melakukannya dan apa yang terjadi?' }
     ],
     farmer: [
       { aspect: 'SO', text: 'Ceritakan saat Anda memperjuangkan kepentingan klien di internal perusahaan — bahkan ketika itu tidak nyaman atau tidak populer. Apa yang terjadi?' },
       { aspect: 'DP', text: 'Ceritakan komitmen kepada klien yang tetap Anda tepati meski kondisi berubah drastis atau menjadi sangat sulit. Bagaimana Anda melakukannya?' },
-      { aspect: 'PT', text: 'Pernahkah klien secara aktif melibatkan Anda dalam perencanaan tahunan atau penyusunan prioritas strategis mereka? Ceritakan bagaimana kepercayaan itu terbangun.' },
-      { aspect: 'CS', text: 'Ceritakan akun yang pernah bermasalah serius — hubungan hampir putus atau kontrak terancam. Bagaimana Anda memulihkannya?' },
-      { aspect: 'AL', text: 'Ceritakan saat Anda menyadari bahwa klien sebenarnya menghindari isu yang sesungguhnya dalam percakapan. Bagaimana Anda mengenalinya dan apa yang Anda lakukan?' },
-      { aspect: 'SP', text: 'Pernahkah Anda mendeteksi ketidakpuasan atau pergeseran kekuasaan internal di klien yang tidak pernah diucapkan langsung? Apa sinyal yang Anda perhatikan dan bagaimana Anda merespons?' },
-      { aspect: 'MO', text: 'Ceritakan bagaimana Anda memantau kinerja akun yang Anda pegang. Berikan contoh konkret temuan yang membuat Anda mengubah rencana kerja.' },
-      { aspect: 'SE', text: 'Bagaimana Anda menilai risiko perpanjangan kontrak jauh sebelum jatuh tempo? Sebutkan indikator konkret yang Anda pakai dan berikan contoh kasus.' },
-      { aspect: 'CO', text: 'Ceritakan situasi di mana Anda harus mengoordinasikan beberapa tim internal sekaligus untuk menyelesaikan isu klien yang besar. Bagaimana Anda mengelola prosesnya?' }
+      { aspect: 'PT', text: 'Pernahkah klien secara aktif melibatkan Anda dalam perencanaan tahunan atau penyusunan prioritas strategis mereka? Ceritakan bagaimana kepercayaan itu terbangun.' }
     ]
   }
 };
