@@ -180,8 +180,15 @@
   .f-row > div { flex: 1; }
   .modal-foot { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
   .hint { font-size: 11px; color: var(--nm-muted-fg); margin-top: 4px; }
-  .rubrik-lvl { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px; }
+  .rubrik-lvl { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 12px; }
   .lvl-chip { flex-shrink: 0; width: 74px; text-align: center; font-size: 11px; font-weight: 700; padding: 8px 0; border-radius: 6px; background: var(--nm-muted); color: var(--nm-muted-fg); }
+  .kb-list { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+  .kb-row { display: flex; gap: 6px; align-items: flex-start; }
+  .kb-row textarea { flex: 1; }
+  .kb-del { flex-shrink: 0; width: 28px; height: 28px; border: 1px solid var(--nm-border); background: #fff; border-radius: 6px; cursor: pointer; color: #94a3b8; font-size: 15px; line-height: 1; display: flex; align-items: center; justify-content: center; }
+  .kb-del:hover { border-color: #fca5a5; background: #fef2f2; color: #dc2626; }
+  .kb-add { align-self: flex-start; margin-top: 2px; padding: 4px 10px; border: 1px dashed var(--nm-border); background: #fff; border-radius: 6px; cursor: pointer; font-size: 11px; font-weight: 600; color: #3b82f6; font-family: inherit; }
+  .kb-add:hover { border-color: #3b82f6; background: #eff6ff; }
 
   /* ── Color picker ────────────────────────────────────────────────────────── */
   .color-picker { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
@@ -344,8 +351,8 @@
   </div>
   <label class="f-label">Deskripsi</label>
   <textarea id="a-desc" rows="2" placeholder="Deskripsi singkat aspek…"></textarea>
-  <label class="f-label" style="margin-top:12px;">Rubrik 5 Level <span class="req">*</span></label>
-  <p class="hint" style="margin-bottom:8px;">Indikator perilaku per level — dikirim ke AI sebagai dasar skoring setiap evaluasi jawaban.</p>
+  <label class="f-label" style="margin-top:12px;">Rubrik 5 Level — Key Behavior <span class="req">*</span></label>
+  <p class="hint" style="margin-bottom:8px;">Key behavior per level (boleh lebih dari satu) — seluruhnya dikirim ke AI sebagai dasar skoring setiap evaluasi jawaban.</p>
   <div id="a-rubrik"></div>
   <div class="modal-foot">
     <button class="btn btn-outline-neutral btn-sm" onclick="closeModal('m-aspek')">Batal</button>
@@ -422,7 +429,7 @@ function seed() {
     code, name: a.name,
     clusterId: a.category === 'soft' ? 'CL1' : 'CL2',
     category: a.category,
-    desc: '', levels: [...a.levels], status: 'Aktif'
+    desc: '', levels: a.levels.map(l => Array.isArray(l) ? [...l] : [l]), status: 'Aktif'
   }));
   let iid = 1;
   const items = [];
@@ -459,6 +466,10 @@ function load() {
     }
   }
   if (!DB.seq.cluster) DB.seq.cluster = DB.clusters.length + 1;
+  // Migration: levels[i] string (1 KB/level) -> array of KB
+  for (const a of DB.aspects) {
+    if (Array.isArray(a.levels)) a.levels = a.levels.map(l => Array.isArray(l) ? l : (l ? [l] : []));
+  }
 }
 
 function save() { localStorage.setItem(LS_KEY, JSON.stringify(DB)); renderAll(); }
@@ -598,7 +609,7 @@ function renderBank() {
     for (const a of clAspects) {
       const items = DB.items.filter(i=>i.aspect===a.code&&i.status!=='Archived');
       const aspRowspan = Math.max(1, items.length);
-      const rubrikOk = a.levels.filter(l=>l&&l.trim()).length===5;
+      const rubrikOk = Array.isArray(a.levels) && a.levels.length===5 && a.levels.every(l=>Array.isArray(l)?l.some(k=>k&&k.trim()):(l&&l.trim()));
 
       const aspekTdHtml = `<td class="aspek-td" rowspan="${aspRowspan}">
         <div class="aspek-td-code">${esc(a.code)}</div>
@@ -729,6 +740,7 @@ function deleteCluster(id) {
 
 /* ── Aspek modal ── */
 let editAspekCode = null;
+let rubrikDraft = [];  // [level][kbIndex] = string
 
 function openAspekModal(code, presetClusterId) {
   editAspekCode = code || null;
@@ -740,21 +752,49 @@ function openAspekModal(code, presetClusterId) {
   $('a-cluster').innerHTML = DB.clusters.map(cl=>
     `<option value="${cl.id}">${esc(cl.nama)}</option>`).join('');
   $('a-cluster').value = a ? a.clusterId : (presetClusterId || DB.clusters[0]?.id || '');
-  $('a-rubrik').innerHTML = LEVELS.map((lbl,i) =>
-    `<div class="rubrik-lvl"><span class="lvl-chip">L${i+1} ${lbl}</span>
-     <textarea rows="2" id="a-lvl-${i}" placeholder="Indikator perilaku level ${i+1}…">${a?esc(a.levels[i]):''}</textarea></div>`
-  ).join('');
+  // seed draft: existing KBs per level, or one empty KB slot
+  rubrikDraft = LEVELS.map((_,i) => {
+    const kbs = a ? (Array.isArray(a.levels[i]) ? a.levels[i] : (a.levels[i] ? [a.levels[i]] : [])) : [];
+    return kbs.length ? [...kbs] : [''];
+  });
+  renderRubrik();
   $('m-aspek').classList.add('open');
 }
+
+function renderRubrik() {
+  syncRubrikDraft();  // capture current textarea values before re-render
+  $('a-rubrik').innerHTML = LEVELS.map((lbl,i) => `
+    <div class="rubrik-lvl">
+      <span class="lvl-chip">L${i+1} ${lbl}</span>
+      <div class="kb-list">
+        ${rubrikDraft[i].map((kb,j) => `
+          <div class="kb-row">
+            <textarea rows="2" data-lvl="${i}" data-kb="${j}" placeholder="Key behavior ${j+1}…">${esc(kb)}</textarea>
+            ${rubrikDraft[i].length>1 ? `<button type="button" class="kb-del" title="Hapus KB" onclick="kbDel(${i},${j})">&times;</button>` : ''}
+          </div>`).join('')}
+        <button type="button" class="kb-add" onclick="kbAdd(${i})">+ Key Behavior</button>
+      </div>
+    </div>`).join('');
+}
+
+function syncRubrikDraft() {
+  $('a-rubrik').querySelectorAll('textarea[data-lvl]').forEach(t => {
+    rubrikDraft[+t.dataset.lvl][+t.dataset.kb] = t.value;
+  });
+}
+
+function kbAdd(lvl) { syncRubrikDraft(); rubrikDraft[lvl].push(''); renderRubrik(); }
+function kbDel(lvl, j) { syncRubrikDraft(); rubrikDraft[lvl].splice(j,1); if(!rubrikDraft[lvl].length) rubrikDraft[lvl].push(''); renderRubrik(); }
 
 function saveAspek() {
   const code  = $('a-kode').value.trim().toUpperCase();
   const nama  = $('a-nama').value.trim();
   const clusterId = $('a-cluster').value;
-  const levels = LEVELS.map((_,i)=>$('a-lvl-'+i).value.trim());
+  syncRubrikDraft();
+  const levels = rubrikDraft.map(kbs => kbs.map(k=>k.trim()).filter(Boolean));
   if (!code||!nama) return toast('Kode dan nama wajib diisi');
   if (!clusterId) return toast('Pilih cluster');
-  if (levels.some(l=>!l)) return toast('Rubrik 5 level wajib lengkap — ini dasar skoring AI');
+  if (levels.some(l=>!l.length)) return toast('Tiap level wajib punya minimal 1 key behavior — dasar skoring AI');
   if (!editAspekCode && getAspek(code)) return toast(`Kode ${code} sudah dipakai`);
   if (editAspekCode) {
     const a = getAspek(editAspekCode);

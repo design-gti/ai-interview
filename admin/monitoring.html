@@ -288,7 +288,7 @@ let DB, ASSIGN_DB;
 function loadDB(){
   try{DB=JSON.parse(localStorage.getItem(LS_ITEM));}catch{}
   if(!DB){
-    const aspects=Object.entries(FRAMEWORK.aspects).map(([code,a])=>({code,name:a.name,category:a.category,desc:'',levels:[...a.levels],status:'Aktif'}));
+    const aspects=Object.entries(FRAMEWORK.aspects).map(([code,a])=>({code,name:a.name,category:a.category,desc:'',levels:a.levels.map(l=>Array.isArray(l)?[...l]:[l]),status:'Aktif'}));
     let iid=1;const items=[];
     for(const role of['hunter','farmer'])for(const q of FRAMEWORK.questions[role])items.push({id:'Q'+String(iid++).padStart(3,'0'),aspect:q.aspect,text:q.text,tipe:'suara',durasi:120,ulang:2,status:'Aktif'});
     const paket=['hunter','farmer'].map((rk,i)=>{const r=FRAMEWORK.roles[rk];return{id:'P'+(i+1),nama:r.label,versi:1,desc:'',status:'Published',locked:true,assigned:true,showResult:false,items:r.aspects.map(code=>{const it=items.find(x=>x.aspect===code&&FRAMEWORK.questions[rk].some(q=>q.aspect===code&&q.text===x.text));return{itemId:it.id,target:r.targets[code],bobot:r.weights[code]};})};});
